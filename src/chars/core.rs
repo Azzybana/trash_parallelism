@@ -56,6 +56,10 @@ pub fn encode_string_base64(s: &str) -> String {
 }
 
 /// Decode a base64 string
+///
+/// # Errors
+///
+/// Returns an error if the input is not valid base64 or if the decoded bytes are not valid UTF-8.
 pub fn decode_string_base64(s: &str) -> Result<String, Box<dyn std::error::Error>> {
     let bytes = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, s)?;
     String::from_utf8(bytes).map_err(Into::into)
@@ -166,11 +170,16 @@ impl StringInterner {
     }
 }
 
+impl Default for StringInterner {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Memory-efficient string builder with size hints
 #[derive(Debug)]
 pub struct EfficientStringBuilder {
     buffer: String,
-    estimated_final_size: Option<usize>,
 }
 
 impl EfficientStringBuilder {
@@ -179,7 +188,6 @@ impl EfficientStringBuilder {
     pub fn new() -> Self {
         Self {
             buffer: String::new(),
-            estimated_final_size: None,
         }
     }
 
@@ -188,7 +196,6 @@ impl EfficientStringBuilder {
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             buffer: String::with_capacity(capacity),
-            estimated_final_size: Some(capacity),
         }
     }
 
@@ -212,5 +219,17 @@ impl EfficientStringBuilder {
     #[must_use]
     pub fn len(&self) -> usize {
         self.buffer.len()
+    }
+
+    /// Check if the builder is empty
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.buffer.is_empty()
+    }
+}
+
+impl Default for EfficientStringBuilder {
+    fn default() -> Self {
+        Self::new()
     }
 }
