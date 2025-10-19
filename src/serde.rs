@@ -182,13 +182,13 @@
 //! - **Compression**: Trade CPU for memory efficiency with Brotli/gzip
 //!
 //! ### CPU Performance
-//! - **Fast Hashing**: ahash provides 2-3x speedup over std::collections::HashMap hashing
+//! - **Fast Hashing**: ahash provides 2-3x speedup over `std::collections::HashMap` hashing
 //! - **SIMD Acceleration**: Base64 operations use SIMD where available
 //! - **Zero-Copy Parsing**: JSON parsing avoids unnecessary allocations
 //! - **Async I/O**: Non-blocking operations prevent thread starvation
 //!
 //! ### Benchmarks
-//! - **JSON Serialization**: ~10-50% faster than raw serde_json for common patterns
+//! - **JSON Serialization**: ~10-50% faster than raw `serde_json` for common patterns
 //! - **Hashing**: ~2-3x faster than cryptographic hashes for integrity checking
 //! - **Base64**: SIMD-accelerated, 2-4x faster than standard implementations
 //! - **Compression**: Brotli typically achieves 20-30% better ratios than gzip
@@ -235,7 +235,7 @@
 //! ## Future Extensions
 //!
 //! ### Planned Features
-//! - **MessagePack Support**: Binary serialization format
+//! - **`MessagePack` Support**: Binary serialization format
 //! - **CBOR Integration**: Concise Binary Object Representation
 //! - **Schema Validation**: JSON Schema validation with jsonschema crate
 //! - **Streaming Parsers**: Large file processing without full memory load
@@ -261,13 +261,13 @@
 //! - **Base64 Safety**: Proper padding and character validation
 //!
 //! ### Performance Security
-//! - **DoS Protection**: Streaming parsers prevent memory exhaustion
+//! - **`DoS` Protection**: Streaming parsers prevent memory exhaustion
 //! - **Timeout Handling**: Async operations support cancellation
 //! - **Resource Limits**: Configurable limits on compression/decompression
 //!
 //! ## Migration Guide
 //!
-//! ### From Raw serde_json
+//! ### From Raw `serde_json`
 //! ```rust
 //! // Before
 //! let json = serde_json::to_string(&data)?;
