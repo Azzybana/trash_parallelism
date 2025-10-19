@@ -27,11 +27,12 @@ use tracing::{debug, info};
 /// Calculate ratio with safe bounds checking and casting.
 ///
 /// This function safely calculates ratios from integer values, handling
-/// casting to f64 and division by zero protection.
+/// casting to f64 and division by zero protection. The denominator is
+/// automatically bounded to prevent exceeding available heap size.
 ///
 /// # Arguments
 /// * `numerator` - The numerator value (usize)
-/// * `denominator` - The denominator value (usize)
+/// * `denominator` - The denominator value (usize), automatically bounded by heap size
 ///
 /// # Returns
 /// A safe ratio value as f64
@@ -48,7 +49,20 @@ pub fn calc_ratio(numerator: usize, denominator: usize) -> f64 {
     if denominator == 0 {
         return 0.0;
     }
-    numerator as f64 / denominator as f64
+
+    // Bound denominator to available heap size to prevent excessive ratios
+    let bounded_denominator = if let Some(heap_size) = get_mimalloc_stats() {
+        denominator.min(heap_size)
+    } else {
+        denominator
+    };
+
+    // Ensure we don't divide by zero after bounding
+    if bounded_denominator == 0 {
+        return 0.0;
+    }
+
+    numerator * 1.0 / bounded_denominator * 1.0
 }
 
 /// Global mimalloc allocator instance
