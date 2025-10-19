@@ -29,6 +29,10 @@ impl ChannelStats {
     }
 
     /// Get statistics as JSON
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if serialization to JSON fails.
     pub fn to_json(&self) -> Result<String, serde_json::Error> {
         serde_json::to_string(self)
     }
@@ -66,6 +70,10 @@ impl<T: Send + 'static + Unpin> MonitoredChannel<T> {
     }
 
     /// Send a message asynchronously with monitoring
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the channel is closed or full.
     pub async fn send_async(&self, msg: T) -> Result<(), crossfire::SendError<T>> {
         let start = Instant::now();
         let result = self.tx.send(msg).await;
@@ -88,6 +96,10 @@ impl<T: Send + 'static + Unpin> MonitoredChannel<T> {
     }
 
     /// Receive a message asynchronously with monitoring
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the channel is closed or empty.
     pub async fn recv_async(&self) -> Result<T, crossfire::RecvError> {
         let start = Instant::now();
         let result = self.rx.recv().await;

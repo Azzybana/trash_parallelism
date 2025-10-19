@@ -5,6 +5,15 @@ use std::sync::Arc;
 use ahash::AHashMap;
 use parking_lot::Mutex;
 
+/// Type alias for the processor function type
+pub type ProcessorFn<T> = dyn Fn(
+        T,
+    ) -> std::pin::Pin<
+        Box<dyn std::future::Future<Output = Result<(), Box<dyn std::error::Error>>> + Send>,
+    > + Send
+    + Sync
+    + 'static;
+
 /// Channel multiplexer for routing messages based on type (non-blocking)
 pub struct ChannelMultiplexer {
     routes: Mutex<AHashMap<String, Box<dyn std::any::Any + Send + Sync>>>,
@@ -31,6 +40,11 @@ impl ChannelMultiplexer {
     }
 
     /// Route a message to the appropriate channel (async)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if no route is found for the route name, or if the channel is closed or full.
+    #[allow(clippy::await_holding_lock)]
     pub async fn route_message<T: Send + 'static + Clone>(
         &self,
         route_name: &str,
@@ -54,12 +68,14 @@ impl Default for ChannelMultiplexer {
 }
 
 /// Async channel processor with error handling (non-blocking)
+#[allow(clippy::type_complexity)]
 pub struct AsyncChannelProcessor<T, F>
 where
     T: Send + 'static,
 {
     receiver: crate::channels::core::RxFuture<T>,
     processor: F,
+    #[allow(clippy::type_complexity)]
     error_handler: Option<Arc<dyn Fn(Box<dyn std::error::Error>) + Send + Sync>>,
 }
 
@@ -84,6 +100,7 @@ where
     }
 
     /// Set error handler
+    #[must_use]
     pub fn with_error_handler(
         mut self,
         handler: impl Fn(Box<dyn std::error::Error>) + Send + Sync + 'static,
@@ -99,20 +116,15 @@ where
 
         smol::spawn(async move {
             let rx = receiver;
-            loop {
-                match rx.recv().await {
-                    Ok(message) => {
-                        let processor = processor.clone();
+            while let Ok(message) = rx.recv().await {
+                let processor = processor.clone();
 
-                        smol::spawn(async move {
-                            if let Err(_e) = processor(message).await {
-                                // Error handling removed
-                            }
-                        })
-                        .detach();
+                smol::spawn(async move {
+                    if let Err(_e) = processor(message).await {
+                        // Error handling removed
                     }
-                    Err(_) => break,
-                }
+                })
+                .detach();
             }
         })
         .detach();

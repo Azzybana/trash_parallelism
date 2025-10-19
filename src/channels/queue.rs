@@ -40,14 +40,26 @@ impl<T: Send + 'static, R: Send + 'static> WorkQueue<T, R> {
     }
 
     /// Submit a task to the queue (non-blocking)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the channel is closed or full.
     pub async fn submit(&self, task: T) -> Result<(), smol::channel::SendError<T>> {
-        let mut next = self.next_worker.lock();
-        let worker = &self.workers[*next % self.workers.len()];
-        *next += 1;
+        let worker_index = {
+            let mut next = self.next_worker.lock();
+            let index = *next % self.workers.len();
+            *next += 1;
+            index
+        };
+        let worker = &self.workers[worker_index];
         worker.send(task).await
     }
 
     /// Collect a result (non-blocking)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the channel is closed or empty.
     pub async fn collect(&self) -> Result<R, smol::channel::RecvError> {
         self.result_rx.recv().await
     }

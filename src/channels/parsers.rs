@@ -41,6 +41,10 @@ impl FastMessageParser {
     }
 
     /// Parse JSON messages efficiently
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if JSON parsing fails for any message slice.
     pub fn parse_json_messages(
         &self,
         buffer: &[u8],
@@ -111,6 +115,10 @@ impl<T: Clone + Send + 'static> BatchingChannel<T> {
     }
 
     /// Send item (batches automatically, async, non-blocking)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the channel is closed or full.
     pub async fn send(&self, item: T) -> Result<(), Box<dyn std::error::Error>> {
         let should_flush = {
             let mut batch = self.current_batch.lock();
@@ -126,6 +134,10 @@ impl<T: Clone + Send + 'static> BatchingChannel<T> {
     }
 
     /// Flush current batch (async, non-blocking)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the channel is closed or full.
     pub async fn flush_batch(&self) -> Result<(), Box<dyn std::error::Error>> {
         let batch = {
             let mut current = self.current_batch.lock();
@@ -159,6 +171,10 @@ impl<T: Send + 'static, F: Fn(&T) -> bool + Send + Sync + 'static> FilteredChann
     }
 
     /// Send message if it passes the filter (async, non-blocking)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the channel is closed or full.
     pub async fn send_filtered(&self, msg: T) -> Result<(), smol::channel::SendError<T>> {
         if (self.filter)(&msg) {
             self.tx.send(msg).await

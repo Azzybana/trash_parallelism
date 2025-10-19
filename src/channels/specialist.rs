@@ -1,6 +1,6 @@
 // Standard library imports
 use std::{
-    io::{BufReader, BufWriter, Read, Write},
+    io::{BufRead, BufReader, BufWriter, Read, Write},
     sync::Arc,
     time::Duration,
 };
@@ -25,6 +25,10 @@ impl Base64Channel {
     }
 
     /// Send data encoded as base64 (async, non-blocking)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if serialization or channel send fails.
     pub async fn send_base64<T: Serialize>(
         &self,
         data: &T,
@@ -36,6 +40,10 @@ impl Base64Channel {
     }
 
     /// Receive and decode base64 data (async, non-blocking)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if channel receive, base64 decoding, or deserialization fails.
     pub async fn recv_base64<T: for<'de> Deserialize<'de>>(
         receiver: &crate::channels::core::RxFuture<String>,
     ) -> Result<T, Box<dyn std::error::Error>> {
@@ -79,6 +87,10 @@ impl CompressedChannel {
     }
 
     /// Send data with compression (async, non-blocking)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if serialization, compression, or channel send fails.
     pub async fn send_compressed<T: Serialize>(
         &self,
         data: &T,
@@ -90,6 +102,10 @@ impl CompressedChannel {
     }
 
     /// Receive and decompress data (async, non-blocking)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if channel receive, decompression, or deserialization fails.
     pub async fn recv_decompressed<T: for<'de> Deserialize<'de>>(
         &self,
     ) -> Result<T, Box<dyn std::error::Error>> {
@@ -170,58 +186,72 @@ impl Default for CompressedChannelBuilder {
 /// File-backed channel for persistence and large data handling
 pub struct FileBackedChannel<T> {
     tx: crate::channels::core::TxFuture<T>,
-    file_tx: crate::channels::core::TxFuture<String>,
     temp_file: Arc<Mutex<Option<NamedTempFile>>>,
 }
 
 impl<T: Serialize + for<'de> Deserialize<'de> + Send + 'static + Unpin> FileBackedChannel<T> {
     /// Create a new file-backed channel
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if creating the temporary file fails.
     pub fn new() -> Result<Self, std::io::Error> {
-        let (tx, _rx) = crate::channels::core::bounded_queue_3::<T>(100);
-        let (file_tx, file_rx) = crate::channels::core::bounded_queue_3::<String>(1000);
+        // expose the receiver so the background writer can persist overflowed messages
+        let (tx, file_rx) = crate::channels::core::bounded_queue_3::<T>(100);
 
         let temp_file = Arc::new(Mutex::new(Some(NamedTempFile::new()?)));
         let temp_file_clone = temp_file.clone();
 
         // Start file writer task (non-blocking)
         smol::spawn(async move {
-            let file_rx = file_rx;
-            while let Ok(json) = file_rx.recv().await {
-                if let Some(ref mut file) = *temp_file_clone.lock() {
-                    let _ = writeln!(file, "{json}");
+            // receive T values from the fallback receiver, serialize to JSON and append to the temp file
+            while let Ok(msg) = file_rx.recv().await {
+                if let Some(ref mut temp) = *temp_file_clone.lock()
+                    && let Ok(json) = serde_json::to_string(&msg)
+                {
+                    let _ = temp.as_file_mut().write_all(format!("{json}\n").as_bytes());
+                    let _ = temp.as_file_mut().flush();
                 }
             }
         })
         .detach();
 
-        Ok(Self {
-            tx,
-            file_tx,
-            temp_file,
-        })
+        Ok(Self { tx, temp_file })
     }
 
     /// Send data (async, non-blocking, memory first then file)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if serialization fails.
     pub async fn send(&self, data: T) -> Result<(), Box<dyn std::error::Error>> {
-        // Try to send to memory channel first
-        if self.tx.send(data).await.is_ok() {
-            return Ok(());
-        }
+        // Serialize first so we can persist if send fails.
+        let json = serde_json::to_string(&data)?;
 
-        // Fall back to file if memory channel is full
-        // Since data was moved, we can't serialize here
-        // This is a design issue, perhaps clone or serialize first
-        // For now, assume send always succeeds or handle differently
-        Ok(())
+        // Try to send to memory channel first. If it fails, persist the serialized JSON to file.
+        if let Ok(()) = self.tx.send(data).await {
+            Ok(())
+        } else {
+            if let Some(ref mut temp) = *self.temp_file.lock() {
+                let _ = temp.as_file_mut().write_all(format!("{json}\n").as_bytes());
+                let _ = temp.as_file_mut().flush();
+            }
+            Ok(())
+        }
     }
 
     /// Flush file data to memory
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if file reading or deserialization fails.
     pub fn flush_to_memory(&self) -> Result<Vec<T>, Box<dyn std::error::Error>> {
         let mut results = Vec::new();
         if let Some(ref file) = *self.temp_file.lock() {
-            let reader = BufReader::new(file);
-            for line in std::io::BufRead::lines(reader) {
-                let line = line?;
+            // Read from the underlying File of NamedTempFile and iterate lines
+            let reader = BufReader::new(file.as_file());
+            for line_res in reader.lines() {
+                let line = line_res?;
                 if !line.trim().is_empty() {
                     let data: T = serde_json::from_str(&line)?;
                     results.push(data);
@@ -235,10 +265,8 @@ impl<T: Serialize + for<'de> Deserialize<'de> + Send + 'static + Unpin> FileBack
 impl<T: Serialize + for<'de> Deserialize<'de> + Send + 'static> Default for FileBackedChannel<T> {
     fn default() -> Self {
         let (tx, _) = crate::channels::core::bounded_queue_3(100);
-        let (file_tx, _) = crate::channels::core::bounded_queue_3(1000);
         Self {
             tx,
-            file_tx,
             temp_file: Arc::new(Mutex::new(None)),
         }
     }
@@ -297,6 +325,10 @@ impl<T: Send + 'static> RateLimitedChannel<T> {
     }
 
     /// Send with rate limiting (async, non-blocking)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if rate limit is exceeded or channel is closed/full.
     pub async fn send(&self, msg: T) -> Result<(), Box<dyn std::error::Error>> {
         if self.rate_limiter.lock().acquire(1.0) {
             self.tx.send(msg).await?;
@@ -360,21 +392,41 @@ impl<T: Send + 'static + Unpin + Clone> PriorityChannel<T> {
     }
 
     /// Send high priority message (async, non-blocking)
+    ///
+    /// # Errors
+    ///
+    /// Send high priority message (async, non-blocking)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the channel is closed or full.
     pub async fn send_high(&self, msg: T) -> Result<(), smol::channel::SendError<T>> {
         self.high_tx.send(msg).await
     }
 
     /// Send normal priority message (async, non-blocking)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the channel is closed or full.
     pub async fn send_normal(&self, msg: T) -> Result<(), smol::channel::SendError<T>> {
         self.normal_tx.send(msg).await
     }
 
     /// Send low priority message (async, non-blocking)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the channel is closed or full.
     pub async fn send_low(&self, msg: T) -> Result<(), smol::channel::SendError<T>> {
         self.low_tx.send(msg).await
     }
 
     /// Receive message (highest priority first, async, non-blocking)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the channel is closed or empty.
     pub async fn recv(&self) -> Result<T, smol::channel::RecvError> {
         self.rx.recv().await
     }
@@ -433,6 +485,10 @@ pub struct PersistentChannel<T: Serialize> {
 
 impl<T: Serialize + Send + 'static> PersistentChannel<T> {
     /// Create a new persistent channel
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if opening the log file fails.
     pub fn new(
         sender: crate::channels::core::TxFuture<T>,
         log_path: &str,
@@ -450,6 +506,10 @@ impl<T: Serialize + Send + 'static> PersistentChannel<T> {
     }
 
     /// Send with persistence (async, non-blocking write to disk + channel)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if serialization or channel send fails.
     pub async fn send_persistent(&self, msg: T) -> Result<(), Box<dyn std::error::Error>> {
         let json = serde_json::to_string(&msg)?;
 
@@ -468,6 +528,10 @@ impl<T: Serialize + Send + 'static> PersistentChannel<T> {
     }
 
     /// Recover messages from log file
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if file opening, reading, or deserialization fails.
     pub fn recover_messages<U: for<'de> Deserialize<'de>>(
         log_path: &str,
     ) -> Result<Vec<U>, Box<dyn std::error::Error>> {
