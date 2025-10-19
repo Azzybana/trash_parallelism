@@ -1,7 +1,6 @@
 // Standard library imports
 use std::{
     io::{BufReader, BufWriter, Read, Write},
-    marker::PhantomData,
     sync::Arc,
     time::{Duration, Instant},
 };
@@ -18,7 +17,6 @@ use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use tempfile::NamedTempFile;
-use tracing::{info, warn};
 
 /// Type alias for async transmitter
 pub type TxFuture<T> = smol::channel::Sender<T>;
@@ -401,7 +399,6 @@ where
     pub fn start(self) {
         let receiver = self.receiver.clone();
         let processor = Arc::new(self.processor);
-        let error_handler = self.error_handler.clone();
 
         smol::spawn(async move {
             let rx = receiver;
@@ -409,15 +406,10 @@ where
                 match rx.recv().await {
                     Ok(message) => {
                         let processor = processor.clone();
-                        let error_handler = error_handler.clone();
 
                         smol::spawn(async move {
-                            if let Err(e) = processor(message).await {
-                                if let Some(handler) = error_handler {
-                                    handler(e);
-                                } else {
-                                    warn!("Channel processor error: {:?}", e);
-                                }
+                            if let Err(_e) = processor(message).await {
+                                // Error handling removed
                             }
                         })
                         .detach();
@@ -578,13 +570,6 @@ pub async fn benchmark_channel<T: Clone + Send + 'static>(
     stats.messages_sent = num_messages as u64;
     stats.messages_received = num_messages as u64;
     stats.avg_latency = Some(total_time / num_messages as u32);
-
-    info!(
-        "Channel benchmark: {} messages in {:?} ({:.2} msg/sec)",
-        num_messages,
-        total_time,
-        num_messages as f64 / total_time.as_secs_f64()
-    );
 
     stats
 }

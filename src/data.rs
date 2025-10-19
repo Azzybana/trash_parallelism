@@ -1,7 +1,8 @@
-/// Data processing utilities for parsing, encoding, and serialization.
-///
-/// This module provides functions for parsing various data formats,
-/// encoding/decoding operations, and JSON manipulation utilities.
+//! Data processing utilities for parsing, encoding, and serialization.
+//!
+//! This module provides functions for parsing various data formats,
+//! encoding/decoding operations, and JSON manipulation utilities.
+
 // Standard library imports
 // (none)
 

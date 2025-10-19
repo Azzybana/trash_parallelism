@@ -64,6 +64,7 @@ pub fn serialize_with_logging<T: Serialize>(
     context: &str,
 ) -> Result<String, serde_json::Error> {
     let json = serde_json::to_string(value)?;
+    println!("Serializing with context: {context}");
     Ok(json)
 }
 

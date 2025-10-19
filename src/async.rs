@@ -18,7 +18,6 @@ use serde::{Deserialize, Serialize};
 use serde_json;
 use smol::Timer;
 use smol_cancellation_token::CancellationToken;
-use tracing::{debug, info, instrument};
 
 /// Async sleep helper
 pub async fn sleep_for(duration: Duration) {
@@ -230,7 +229,8 @@ pub async fn hash_data_async(data: &[u8]) -> u64 {
         let mut hasher = AHasher::default();
         hasher.write(&data);
         hasher.finish()
-    }).await
+    })
+    .await
 }
 
 pub async fn encode_base64_async(data: &[u8]) -> String {
@@ -320,7 +320,6 @@ where
                 if attempts == 0 {
                     return Err(e);
                 }
-                debug!("Operation failed, retrying in {:?}: {:?}", delay, e);
                 Timer::after(delay).await;
             }
         }
@@ -695,7 +694,6 @@ impl AsyncPerformanceMonitor {
         let duration = start.elapsed();
 
         self.operations.lock().push((name.to_string(), duration));
-        info!("Async operation '{}' completed in {:?}", name, duration);
 
         result
     }
@@ -751,8 +749,7 @@ impl Default for AsyncPerformanceMonitor {
 }
 
 /// Traced async operation (non-blocking)
-#[instrument(skip(f))]
-pub async fn traced_async_operation<F, Fut, T>(name: &str, f: F) -> T
+pub async fn traced_async_operation<F, Fut, T>(_name: &str, f: F) -> T
 where
     F: FnOnce() -> Fut,
     Fut: std::future::Future<Output = T>,

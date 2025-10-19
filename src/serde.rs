@@ -296,14 +296,14 @@
 //! - **Async Patterns**: Complex async workflows
 //! - **Error Handling**: Robust error management strategies
 
-pub mod json;
 pub mod base64;
 pub mod bytes;
+pub mod json;
 pub mod streaming;
 pub mod utility;
 
-pub use json::*;
 pub use base64::*;
 pub use bytes::*;
+pub use json::*;
 pub use streaming::*;
 pub use utility::*;

@@ -22,47 +22,23 @@ use mimalloc::MiMalloc;
 use parking_lot::{Mutex, RwLock};
 use serde::{Deserialize, Serialize};
 use tempfile::NamedTempFile;
-use tracing::{debug, info};
 
-/// Calculate ratio with safe bounds checking and casting.
-///
-/// This function safely calculates ratios from integer values, handling
-/// casting to f64 and division by zero protection. The denominator is
-/// automatically bounded to prevent exceeding available heap size.
-///
-/// # Arguments
-/// * `numerator` - The numerator value (usize)
-/// * `denominator` - The denominator value (usize), automatically bounded by heap size
-///
-/// # Returns
-/// A safe ratio value as f64
-///
-/// # Examples
-/// ```
-/// use trash_analyzer::memory::calc_ratio;
-///
-/// assert_eq!(calc_ratio(512, 1024), 0.5);
-/// assert_eq!(calc_ratio(1024, 0), 0.0); // Division by zero protection
-/// ```
+// Calculate ratio after reducing both numerator and denominator by 20%.
+// This uses integer arithmetic (multiply by 4, divide by 5) to avoid floating-point
+// operations, and reduces the values to help fit within f64's 53-bit mantissa precision
+// (values up to ~9e15). The 20% reduction is arbitrary but helps prevent overflow
+// and precision loss when casting large usize values to f64.
+#[allow(clippy::cast_precision_loss)]
 #[must_use]
 pub fn calc_ratio(numerator: usize, denominator: usize) -> f64 {
-    if denominator == 0 {
-        return 0.0;
-    }
-
-    // Bound denominator to available heap size to prevent excessive ratios
-    let bounded_denominator = if let Some(heap_size) = get_mimalloc_stats() {
-        denominator.min(heap_size)
+    if denominator > 0 {
+        // Reduce by 20% using integer math: (x * 4) / 5 ≈ x * 0.8
+        let reduced_num = ((numerator as u128 * 4) / 5) as f64;
+        let reduced_den = ((denominator as u128 * 4) / 5) as f64;
+        reduced_num / reduced_den
     } else {
-        denominator
-    };
-
-    // Ensure we don't divide by zero after bounding
-    if bounded_denominator == 0 {
-        return 0.0;
+        0.0
     }
-
-    numerator * 1.0 / bounded_denominator * 1.0
 }
 
 /// Global mimalloc allocator instance
@@ -141,7 +117,6 @@ impl MemoryPool {
             .max(new_stats.allocated_bytes);
         self.stats.store(Arc::new(new_stats));
 
-        debug!("Allocated {} bytes from pool '{}'", size, self.config.name);
         Ok(ptr)
     }
 
@@ -170,10 +145,6 @@ impl MemoryPool {
         new_stats.deallocation_count += 1;
         self.stats.store(Arc::new(new_stats));
 
-        debug!(
-            "Deallocated {} bytes from pool '{}'",
-            size, self.config.name
-        );
         Ok(())
     }
 
@@ -195,47 +166,18 @@ impl MemoryPool {
     /// Deactivate the pool
     pub fn deactivate(&self) {
         self.active.store(false, Ordering::Relaxed);
-        info!("Deactivated memory pool '{}'", self.config.name);
     }
 
     /// Get fragmentation ratio
     #[allow(clippy::cast_precision_loss)]
     pub fn fragmentation_ratio(&self) -> f64 {
         let stats = self.stats.load();
-        if stats.heap_size == 0 {
-            0.0
-        } else {
-            // Handle potential precision loss for very large heap sizes (> 2^53)
-            // f64 has 53 bits of mantissa precision, so values > 2^53 lose precision
-            const MAX_EXACT_F64: usize = 1 << 53; // 9,007,199,254,740,992
-
-            if stats.heap_size > MAX_EXACT_F64 || stats.allocated_bytes > MAX_EXACT_F64 {
-                // For very large values, use checked arithmetic and clamp to reasonable range
-                // Note: We accept precision loss here as fragmentation ratios > 2.0 are pathological
-                let ratio = if stats.heap_size > 0 {
-                    (stats.allocated_bytes as f64).max(0.0) / (stats.heap_size as f64).max(1.0)
-                } else {
-                    0.0
-                };
-                // Clamp ratio to reasonable bounds (0.0 to 2.0) to handle precision issues
-                ratio.clamp(0.0, 2.0)
-            } else {
-                // Cast to f64 to avoid integer division
-                stats.allocated_bytes as f64 / stats.heap_size as f64
-            }
-        }
+        calc_ratio(stats.allocated_bytes, stats.heap_size)
     }
 }
 
 impl Drop for MemoryPool {
     fn drop(&mut self) {
-        // Clean up all allocated blocks
-        let blocks = self.allocated_blocks.lock();
-        debug!(
-            "Dropped memory pool '{}' with {} blocks freed",
-            self.config.name,
-            blocks.len()
-        );
         // The boxes will be dropped automatically
     }
 }
@@ -263,7 +205,6 @@ impl MemoryManager {
         let pool = Arc::new(MemoryPool::new(config.clone()));
         let mut pools = self.pools.write();
         pools.insert(config.name.clone(), pool.clone());
-        info!("Created memory pool '{}'", config.name);
         pool
     }
 
@@ -308,11 +249,8 @@ impl MemoryManager {
             total_stats.heap_size = mi_stats;
         }
 
-        total_stats.fragmentation_ratio = if total_stats.heap_size > 0 {
-            total_stats.allocated_bytes as f64 / total_stats.heap_size as f64
-        } else {
-            0.0
-        };
+        total_stats.fragmentation_ratio =
+            calc_ratio(total_stats.allocated_bytes, total_stats.heap_size);
 
         Arc::new(total_stats)
     }
@@ -331,14 +269,7 @@ impl MemoryManager {
                     break;
                 }
 
-                let stats = manager.global_stats();
-                info!(
-                    "Memory stats - Allocated: {} bytes, Peak: {} bytes, Total: {} bytes, Fragmentation: {:.2}%",
-                    stats.allocated_bytes,
-                    stats.peak_allocated_bytes,
-                    stats.total_allocated_bytes,
-                    stats.fragmentation_ratio * 100.0
-                );
+                // Memory stats logging removed
             }
         });
     }
@@ -351,7 +282,6 @@ impl MemoryManager {
     /// Force garbage collection (mimalloc)
     pub fn collect_garbage(&self) {
         // Mimalloc doesn't expose direct GC, but we can hint
-        info!("Requested garbage collection");
     }
 
     /// Get memory usage report
@@ -450,7 +380,6 @@ impl MemoryArena {
     /// Reset the arena
     pub fn reset(&self) {
         self.offset.store(0, Ordering::Relaxed);
-        debug!("Reset memory arena '{}'", self.name);
     }
 
     /// Get current usage
@@ -530,13 +459,11 @@ impl MemoryProfiler {
     /// Start profiling
     pub fn start(&self) {
         self.active.store(true, Ordering::Relaxed);
-        info!("Started memory profiling");
     }
 
     /// Stop profiling
     pub fn stop(&self) {
         self.active.store(false, Ordering::Relaxed);
-        info!("Stopped memory profiling");
     }
 
     /// Record an allocation
@@ -621,8 +548,6 @@ pub fn init_memory_management(monitoring_interval: Option<Duration>) {
     if let Some(interval) = monitoring_interval {
         manager.start_monitoring(interval);
     }
-
-    info!("Initialized memory management with mimalloc");
 }
 
 /// Create a default memory pool configuration

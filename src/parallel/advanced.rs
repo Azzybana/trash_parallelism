@@ -111,9 +111,11 @@ where
 {
     let _timer = monitor.start_operation();
 
+    println!("Starting operation: {operation_name}");
     let start = Instant::now();
     let result = f();
     let duration = start.elapsed();
+    println!("Operation '{operation_name}' completed in {duration:?}");
 
     result
 }

@@ -12,7 +12,7 @@
 //! - **System Utilities**: Time handling, environment variables, file system operations
 //! - **Data Processing**: Parsing, serialization, and data manipulation
 //! - **I/O Operations**: File and network I/O with async support
-//! - **Logging**: Structured logging with tracing
+//! - **Logging**: Structured logging
 //! - **Utilities**: Compression, hashing, JSON handling, and more
 //!
 //! ## Quick Start
@@ -68,12 +68,11 @@ pub mod chars;
 pub mod common;
 pub mod data;
 pub mod io;
-pub mod logging;
 pub mod memory;
+pub mod parallel;
 pub mod serde;
 pub mod sys;
-pub mod parallel;
 
 // Re-exports
-pub use sys::{current_utc_time, read_env_var};
 pub use parallel::{parallel_for_each, parallel_map};
+pub use sys::{current_utc_time, read_env_var};

@@ -5,10 +5,7 @@
 /// full range of available dependencies.
 /// for robust asynchronous programming.
 // Standard library imports
-use std::{
-    hash::Hasher,
-    sync::Arc,
-};
+use std::{hash::Hasher, sync::Arc};
 
 // External crate imports
 use ahash::{AHashMap, AHasher};
@@ -18,7 +15,6 @@ use memchr::memchr;
 use parking_lot::Mutex;
 use serde_json;
 use smol::fs;
-use tracing::debug;
 
 /// Find the first occurrence of a byte in a slice
 #[must_use]
@@ -108,7 +104,6 @@ pub async fn read_file_to_string_async(path: &str) -> Result<String, std::io::Er
     let mut file = fs::File::open(path).await?;
     let mut contents = String::new();
     file.read_to_string(&mut contents).await?;
-    debug!("Async read {} bytes from {}", contents.len(), path);
     Ok(contents)
 }
 
@@ -117,7 +112,6 @@ pub async fn write_string_to_file_async(path: &str, contents: &str) -> Result<()
     let mut file = fs::File::create(path).await?;
     file.write_all(contents.as_bytes()).await?;
     file.flush().await?;
-    debug!("Async wrote {} bytes to {}", contents.len(), path);
     Ok(())
 }
 

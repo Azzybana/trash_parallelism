@@ -18,7 +18,6 @@ use chrono::{DateTime, Utc};
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use serde_json;
-use tracing::debug;
 
 /// Creates a new empty `AHashMap` with the `AHash` hashing algorithm.
 ///
@@ -128,7 +127,6 @@ pub fn compress_brotli(data: &[u8], level: u32) -> Result<Vec<u8>, std::io::Erro
         compressor.write_all(data)?;
         compressor.flush()?;
     }
-    debug!("Compressed {} bytes to {} bytes", data.len(), output.len());
     Ok(output)
 }
 
@@ -137,7 +135,6 @@ pub fn decompress_brotli(data: &[u8]) -> Result<Vec<u8>, std::io::Error> {
     let mut decompressor = Decompressor::new(data, 4096);
     let mut output = Vec::new();
     decompressor.read_to_end(&mut output)?;
-    debug!("Decompressed to {} bytes", output.len());
     Ok(output)
 }
 

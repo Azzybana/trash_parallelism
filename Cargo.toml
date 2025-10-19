@@ -31,20 +31,6 @@
 
 [dependencies]
 
-    # Logging
-    tracing = { version = "0.1.41", features = [
-        "async-await",
-        "valuable",
-    ] }
-    tracing-subscriber = { version = "0.3.20", features = [
-        "json",
-        "once_cell",
-        "valuable",
-    ] }
-    tracing-serde = { version = "0.2.0", features = [
-        "valuable",
-    ] }
-
     # Async
     crossfire = { version = "2.1.6", features = ["smol"] }
     parking_lot = { version = "0.12.5", features = [
