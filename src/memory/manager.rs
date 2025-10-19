@@ -3,29 +3,23 @@
 /// This module provides memory managers, global state management,
 /// and utilities for coordinating memory operations across the system.
 // Standard library imports
-use std::{
-    sync::Arc,
-    thread::spawn,
-    time::Duration,
-};
+use std::{fmt::Write, sync::Arc, thread::spawn, time::Duration};
 
 // External crate imports
 use ahash::AHashMap;
-use arc_swap::ArcSwap;
 use parking_lot::{Mutex, RwLock};
 
 // Local imports
 use super::{
-    calc_ratio, get_mimalloc_stats, CompressedMemoryPool, MemoryEventLogger,
-    MemoryEventType, MemoryPool, MemoryPoolConfig, MemorySnapshot,
-    MemoryStats, ParallelMemoryProcessor, SecureMemoryPool,
+    CompressedMemoryPool, MemoryEventLogger, MemoryEventType, MemoryPool, MemoryPoolConfig,
+    MemorySnapshot, MemoryStats, ParallelMemoryProcessor, SecureMemoryPool, calc_ratio,
+    get_mimalloc_stats,
 };
 
 /// Global memory manager
 #[derive(Debug)]
 pub struct MemoryManager {
     pools: RwLock<AHashMap<String, Arc<MemoryPool>>>,
-    global_stats: ArcSwap<MemoryStats>,
     monitoring_active: Mutex<bool>,
 }
 
@@ -35,13 +29,12 @@ impl MemoryManager {
     pub fn new() -> Self {
         Self {
             pools: RwLock::new(AHashMap::new()),
-            global_stats: ArcSwap::new(Arc::new(MemoryStats::default())),
             monitoring_active: Mutex::new(true),
         }
     }
 
     /// Create a memory pool
-    pub fn create_pool(&self, config: MemoryPoolConfig) -> Arc<MemoryPool> {
+    pub fn create_pool(&self, config: &MemoryPoolConfig) -> Arc<MemoryPool> {
         let pool = Arc::new(MemoryPool::new(config.clone()));
         let mut pools = self.pools.write();
         pools.insert(config.name.clone(), pool.clone());
@@ -153,10 +146,12 @@ impl MemoryManager {
 
         for (name, pool) in pools.iter() {
             let pool_stats = pool.stats();
-            report.push_str(&format!(
-                "- {}: {} bytes allocated, {} blocks\n",
+            let _ = write!(
+                report,
+                "- {}: {} bytes allocated, {} blocks",
                 name, pool_stats.allocated_bytes, pool_stats.allocation_count
-            ));
+            );
+            report.push('\n');
         }
 
         report
@@ -167,7 +162,6 @@ impl Clone for MemoryManager {
     fn clone(&self) -> Self {
         Self {
             pools: RwLock::new(AHashMap::new()), // Don't clone pools for simplicity
-            global_stats: ArcSwap::new(Arc::new(MemoryStats::default())),
             monitoring_active: Mutex::new(*self.monitoring_active.lock()),
         }
     }
@@ -205,7 +199,7 @@ impl EnhancedMemoryManager {
     /// Create a compressed memory pool
     pub fn create_compressed_pool(
         &self,
-        config: MemoryPoolConfig,
+        config: &MemoryPoolConfig,
         compression_level: u32,
     ) -> Arc<CompressedMemoryPool> {
         let pool = Arc::new(CompressedMemoryPool::new(config.clone(), compression_level));
@@ -225,7 +219,7 @@ impl EnhancedMemoryManager {
     /// Create a secure memory pool
     pub fn create_secure_pool(
         &self,
-        config: MemoryPoolConfig,
+        config: &MemoryPoolConfig,
         encryption_key: Option<Vec<u8>>,
     ) -> Arc<SecureMemoryPool> {
         let pool = Arc::new(SecureMemoryPool::new(config.clone(), encryption_key));

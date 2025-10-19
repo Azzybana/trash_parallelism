@@ -56,12 +56,14 @@ impl MemoryProfiler {
 
     /// Start profiling
     pub fn start(&self) {
-        self.active.store(true, std::sync::atomic::Ordering::Relaxed);
+        self.active
+            .store(true, std::sync::atomic::Ordering::Relaxed);
     }
 
     /// Stop profiling
     pub fn stop(&self) {
-        self.active.store(false, std::sync::atomic::Ordering::Relaxed);
+        self.active
+            .store(false, std::sync::atomic::Ordering::Relaxed);
     }
 
     /// Record an allocation
@@ -94,6 +96,8 @@ impl MemoryProfiler {
                 .iter()
                 .map(|(_, time)| now.duration_since(*time))
                 .max();
+            // Using a built-in function to handle sanity checking.
+            #[allow(clippy::cast_precision_loss)]
             let rate = if let Some(span) = time_span {
                 if span.as_secs_f64() > 0.0 {
                     count as f64 / span.as_secs_f64()

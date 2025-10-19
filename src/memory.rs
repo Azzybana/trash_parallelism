@@ -85,7 +85,18 @@ pub fn allocate_aligned(size: usize, alignment: usize) -> Result<*mut u8, std::i
 /// # Errors
 ///
 /// Returns an `std::io::Error` if the layout is invalid.
-pub fn deallocate_aligned(
+///
+/// # Safety
+///
+/// This function is `unsafe` because it dereferences a raw pointer and requires the
+/// caller to ensure the following:
+/// - `ptr` must be either null or a pointer previously returned by `allocate_aligned`
+///   (or otherwise allocated with the same `Layout`).
+/// - `size` and `alignment` must match the original allocation's layout.
+/// - The memory referenced by `ptr` must not be used after calling this function.
+///
+/// Callers must call this function inside an `unsafe` block.
+pub unsafe fn deallocate_aligned(
     ptr: *mut u8,
     size: usize,
     alignment: usize,
@@ -97,7 +108,10 @@ pub fn deallocate_aligned(
     let layout = Layout::from_size_align(size, alignment)
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidInput, e))?;
 
-    unsafe { std::alloc::dealloc(ptr, layout) };
+    // SAFETY: Caller guarantees `ptr` was allocated with `layout` or is null.
+    unsafe {
+        std::alloc::dealloc(ptr, layout);
+    }
     Ok(())
 }
 
@@ -124,7 +138,9 @@ impl MemoryUsageGuard {
     ///
     /// Returns an `std::io::Error` if the memory limit is exceeded.
     pub fn try_allocate(&self, bytes: usize) -> Result<MemoryAllocationGuard<'_>, std::io::Error> {
-        let current = self.current_bytes.load(std::sync::atomic::Ordering::Relaxed);
+        let current = self
+            .current_bytes
+            .load(std::sync::atomic::Ordering::Relaxed);
         if current + bytes > self.max_bytes {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::OutOfMemory,
@@ -132,14 +148,16 @@ impl MemoryUsageGuard {
             ));
         }
 
-        self.current_bytes.fetch_add(bytes, std::sync::atomic::Ordering::Relaxed);
+        self.current_bytes
+            .fetch_add(bytes, std::sync::atomic::Ordering::Relaxed);
         Ok(MemoryAllocationGuard { bytes, guard: self })
     }
 
     /// Get current usage
     #[must_use]
     pub fn current_usage(&self) -> usize {
-        self.current_bytes.load(std::sync::atomic::Ordering::Relaxed)
+        self.current_bytes
+            .load(std::sync::atomic::Ordering::Relaxed)
     }
 
     /// Get maximum allowed bytes
@@ -149,7 +167,8 @@ impl MemoryUsageGuard {
     }
 
     fn deallocate(&self, bytes: usize) {
-        self.current_bytes.fetch_sub(bytes, std::sync::atomic::Ordering::Relaxed);
+        self.current_bytes
+            .fetch_sub(bytes, std::sync::atomic::Ordering::Relaxed);
     }
 }
 
