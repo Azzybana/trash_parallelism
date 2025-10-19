@@ -18,7 +18,7 @@ use arc_swap::ArcSwap;
 use parking_lot::Mutex;
 
 // Local imports
-use super::{calc_ratio, MemoryStats, MemoryPoolConfig};
+use super::{MemoryPoolConfig, MemoryStats, calc_ratio};
 
 /// Memory pool for efficient allocations
 #[derive(Debug)]

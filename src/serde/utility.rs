@@ -1,8 +1,8 @@
-use std::hash::Hasher;
 use ahash::AHasher;
 use chrono::{DateTime, Utc};
 use memchr::memchr;
 use serde::{Deserialize, Serialize};
+use std::hash::Hasher;
 
 /// Compute a fast non-cryptographic hash of serialized JSON.
 ///

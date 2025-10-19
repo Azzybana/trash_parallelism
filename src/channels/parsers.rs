@@ -69,7 +69,10 @@ pub struct ChannelAggregator<T> {
 impl<T: Send + 'static + Clone> ChannelAggregator<T> {
     /// Create a new aggregator
     #[must_use]
-    pub fn new(inputs: Vec<crate::channels::core::RxFuture<T>>, output: crate::channels::core::TxFuture<T>) -> Self {
+    pub fn new(
+        inputs: Vec<crate::channels::core::RxFuture<T>>,
+        output: crate::channels::core::TxFuture<T>,
+    ) -> Self {
         Self { inputs, output }
     }
 

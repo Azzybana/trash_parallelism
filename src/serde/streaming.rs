@@ -1,7 +1,7 @@
-use std::io::{Read, Write};
 use futures_lite::{AsyncReadExt, AsyncWriteExt};
 use serde::{Deserialize, Serialize};
 use smol::fs;
+use std::io::{Read, Write};
 
 /// Serialize a value to JSON and write it to a writer.
 ///

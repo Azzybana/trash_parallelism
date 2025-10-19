@@ -433,7 +433,10 @@ pub struct PersistentChannel<T: Serialize> {
 
 impl<T: Serialize + Send + 'static> PersistentChannel<T> {
     /// Create a new persistent channel
-    pub fn new(sender: crate::channels::core::TxFuture<T>, log_path: &str) -> Result<Self, std::io::Error> {
+    pub fn new(
+        sender: crate::channels::core::TxFuture<T>,
+        log_path: &str,
+    ) -> Result<Self, std::io::Error> {
         let file = std::fs::OpenOptions::new()
             .create(true)
             .append(true)

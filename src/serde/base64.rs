@@ -81,7 +81,9 @@ pub fn decode_base64(data: &str) -> Result<Vec<u8>, base64::DecodeError> {
 /// let b64_json = serialize_to_base64_json(&person).unwrap();
 /// println!("Base64 JSON: {}", b64_json);
 /// ```
-pub fn serialize_to_base64_json<T: serde::Serialize>(value: &T) -> Result<String, serde_json::Error> {
+pub fn serialize_to_base64_json<T: serde::Serialize>(
+    value: &T,
+) -> Result<String, serde_json::Error> {
     let bytes = serde_json::to_vec(value)?;
     Ok(encode_base64(&bytes))
 }

@@ -20,7 +20,11 @@ impl ChannelMultiplexer {
     }
 
     /// Register a route for a message type
-    pub fn register_route<T: Send + 'static>(&self, route_name: &str, sender: crate::channels::core::TxFuture<T>) {
+    pub fn register_route<T: Send + 'static>(
+        &self,
+        route_name: &str,
+        sender: crate::channels::core::TxFuture<T>,
+    ) {
         self.routes
             .lock()
             .insert(route_name.to_string(), Box::new(sender));
