@@ -24,94 +24,31 @@ use serde::{Deserialize, Serialize};
 use tempfile::NamedTempFile;
 use tracing::{debug, info};
 
-/// Sanitized ratio calculation with bounds checking and division by zero protection.
+/// Calculate ratio with safe bounds checking and casting.
 ///
-/// This function safely calculates ratios while handling edge cases that could cause
-/// mathematical errors or performance issues.
+/// This function safely calculates ratios from integer values, handling
+/// casting to f64 and division by zero protection.
 ///
 /// # Arguments
-/// * `numerator` - The numerator value
-/// * `denominator` - The denominator value (protected against zero)
-/// * `default_value` - Value to return when denominator is zero
-/// * `max_ratio` - Optional maximum ratio limit (clamps result if exceeded)
+/// * `numerator` - The numerator value (usize)
+/// * `denominator` - The denominator value (usize)
 ///
 /// # Returns
-/// A safe ratio value between 0.0 and max_ratio (if specified)
+/// A safe ratio value as f64
 ///
 /// # Examples
 /// ```
-/// use trash_analyzer::memory::safe_ratio;
+/// use trash_analyzer::memory::calc_ratio;
 ///
-/// // Normal case
-/// assert_eq!(safe_ratio(3.0, 4.0, 0.0, None), 0.75);
-///
-/// // Division by zero protection
-/// assert_eq!(safe_ratio(5.0, 0.0, 1.0, None), 1.0);
-///
-/// // Bounds clamping
-/// assert_eq!(safe_ratio(100.0, 1.0, 0.0, Some(10.0)), 10.0);
+/// assert_eq!(calc_ratio(512, 1024), 0.5);
+/// assert_eq!(calc_ratio(1024, 0), 0.0); // Division by zero protection
 /// ```
 #[must_use]
-pub fn safe_ratio(
-    numerator: f64,
-    denominator: f64,
-    default_value: f64,
-    max_ratio: Option<f64>,
-) -> f64 {
-    // Protect against division by zero
-    if denominator == 0.0 || !denominator.is_finite() {
-        return default_value;
-    }
-
-    // Protect against invalid numerator
-    if !numerator.is_finite() {
-        return default_value;
-    }
-
-    let ratio = numerator / denominator;
-
-    // Check for invalid results
-    if !ratio.is_finite() {
-        return default_value;
-    }
-
-    // Apply bounds checking if specified
-    if let Some(max) = max_ratio {
-        if ratio > max {
-            return max;
-        }
-    }
-
-    // Ensure non-negative result
-    if ratio < 0.0 {
+pub fn calc_ratio(numerator: usize, denominator: usize) -> f64 {
+    if denominator == 0 {
         return 0.0;
     }
-
-    ratio
-}
-
-/// Calculate fragmentation ratio with safe bounds checking.
-///
-/// This is a convenience function for memory fragmentation calculations
-/// that provides reasonable defaults for memory analysis.
-///
-/// # Arguments
-/// * `allocated` - Bytes currently allocated
-/// * `total` - Total heap size
-///
-/// # Returns
-/// Fragmentation ratio between 0.0 and 1.0 (clamped)
-///
-/// # Examples
-/// ```
-/// use trash_analyzer::memory::fragmentation_ratio;
-///
-/// assert_eq!(fragmentation_ratio(512, 1024), 0.5);
-/// assert_eq!(fragmentation_ratio(1024, 0), 0.0); // Division by zero protection
-/// ```
-#[must_use]
-pub fn fragmentation_ratio(allocated: usize, total: usize) -> f64 {
-    safe_ratio(allocated as f64, total as f64, 0.0, Some(1.0))
+    numerator as f64 / denominator as f64
 }
 
 /// Global mimalloc allocator instance
