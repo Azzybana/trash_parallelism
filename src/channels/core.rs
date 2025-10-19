@@ -89,6 +89,10 @@ pub fn create_unbounded_channel<T: Send + 'static>() -> (TxFuture<T>, RxFuture<T
 }
 
 /// Send a message on a smol channel (async)
+///
+/// # Errors
+///
+/// Returns an error if the channel is closed or full.
 pub async fn send_async<T>(
     sender: &TxFuture<T>,
     msg: T,
@@ -97,11 +101,19 @@ pub async fn send_async<T>(
 }
 
 /// Receive a message from a smol channel (async)
+///
+/// # Errors
+///
+/// Returns an error if the channel is closed or empty.
 pub async fn recv_async<T>(receiver: &RxFuture<T>) -> Result<T, smol::channel::RecvError> {
     receiver.recv().await
 }
 
 /// Send JSON message on smol channel
+///
+/// # Errors
+///
+/// Returns an error if the channel is closed or full.
 pub async fn send_json_message<T: Serialize>(
     sender: &TxFuture<JsonMessage>,
     payload: T,
@@ -117,6 +129,10 @@ pub async fn send_json_message<T: Serialize>(
 }
 
 /// Receive and parse JSON message from smol channel
+///
+/// # Errors
+///
+/// Returns an error if the channel is closed or empty, or if deserialization fails.
 pub async fn recv_json_message<T: for<'de> Deserialize<'de>>(
     receiver: &RxFuture<JsonMessage>,
 ) -> Result<T, Box<dyn std::error::Error>> {
@@ -126,6 +142,10 @@ pub async fn recv_json_message<T: for<'de> Deserialize<'de>>(
 }
 
 /// Broadcast a message to multiple smol senders (high-throughput)
+///
+/// # Errors
+///
+/// Returns an error if any of the channels are closed or full.
 pub async fn broadcast_message<T: Clone + Send + 'static>(
     message: T,
     senders: Vec<TxFuture<T>>,
@@ -191,7 +211,10 @@ pub async fn benchmark_channel<T: Clone + Send + 'static>(
     let total_time = start.elapsed();
     stats.messages_sent = num_messages as u64;
     stats.messages_received = num_messages as u64;
-    stats.avg_latency = Some(total_time / num_messages as u32);
+    #[allow(clippy::cast_possible_truncation)]
+    {
+        stats.avg_latency = Some(total_time / num_messages as u32);
+    }
 
     stats
 }
