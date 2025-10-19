@@ -24,6 +24,96 @@ use serde::{Deserialize, Serialize};
 use tempfile::NamedTempFile;
 use tracing::{debug, info};
 
+/// Sanitized ratio calculation with bounds checking and division by zero protection.
+///
+/// This function safely calculates ratios while handling edge cases that could cause
+/// mathematical errors or performance issues.
+///
+/// # Arguments
+/// * `numerator` - The numerator value
+/// * `denominator` - The denominator value (protected against zero)
+/// * `default_value` - Value to return when denominator is zero
+/// * `max_ratio` - Optional maximum ratio limit (clamps result if exceeded)
+///
+/// # Returns
+/// A safe ratio value between 0.0 and max_ratio (if specified)
+///
+/// # Examples
+/// ```
+/// use trash_analyzer::memory::safe_ratio;
+///
+/// // Normal case
+/// assert_eq!(safe_ratio(3.0, 4.0, 0.0, None), 0.75);
+///
+/// // Division by zero protection
+/// assert_eq!(safe_ratio(5.0, 0.0, 1.0, None), 1.0);
+///
+/// // Bounds clamping
+/// assert_eq!(safe_ratio(100.0, 1.0, 0.0, Some(10.0)), 10.0);
+/// ```
+#[must_use]
+pub fn safe_ratio(
+    numerator: f64,
+    denominator: f64,
+    default_value: f64,
+    max_ratio: Option<f64>,
+) -> f64 {
+    // Protect against division by zero
+    if denominator == 0.0 || !denominator.is_finite() {
+        return default_value;
+    }
+
+    // Protect against invalid numerator
+    if !numerator.is_finite() {
+        return default_value;
+    }
+
+    let ratio = numerator / denominator;
+
+    // Check for invalid results
+    if !ratio.is_finite() {
+        return default_value;
+    }
+
+    // Apply bounds checking if specified
+    if let Some(max) = max_ratio {
+        if ratio > max {
+            return max;
+        }
+    }
+
+    // Ensure non-negative result
+    if ratio < 0.0 {
+        return 0.0;
+    }
+
+    ratio
+}
+
+/// Calculate fragmentation ratio with safe bounds checking.
+///
+/// This is a convenience function for memory fragmentation calculations
+/// that provides reasonable defaults for memory analysis.
+///
+/// # Arguments
+/// * `allocated` - Bytes currently allocated
+/// * `total` - Total heap size
+///
+/// # Returns
+/// Fragmentation ratio between 0.0 and 1.0 (clamped)
+///
+/// # Examples
+/// ```
+/// use trash_analyzer::memory::fragmentation_ratio;
+///
+/// assert_eq!(fragmentation_ratio(512, 1024), 0.5);
+/// assert_eq!(fragmentation_ratio(1024, 0), 0.0); // Division by zero protection
+/// ```
+#[must_use]
+pub fn fragmentation_ratio(allocated: usize, total: usize) -> f64 {
+    safe_ratio(allocated as f64, total as f64, 0.0, Some(1.0))
+}
+
 /// Global mimalloc allocator instance
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
@@ -158,12 +248,30 @@ impl MemoryPool {
     }
 
     /// Get fragmentation ratio
+    #[allow(clippy::cast_precision_loss)]
     pub fn fragmentation_ratio(&self) -> f64 {
         let stats = self.stats.load();
         if stats.heap_size == 0 {
             0.0
         } else {
-            stats.allocated_bytes as f64 / stats.heap_size as f64
+            // Handle potential precision loss for very large heap sizes (> 2^53)
+            // f64 has 53 bits of mantissa precision, so values > 2^53 lose precision
+            const MAX_EXACT_F64: usize = 1 << 53; // 9,007,199,254,740,992
+
+            if stats.heap_size > MAX_EXACT_F64 || stats.allocated_bytes > MAX_EXACT_F64 {
+                // For very large values, use checked arithmetic and clamp to reasonable range
+                // Note: We accept precision loss here as fragmentation ratios > 2.0 are pathological
+                let ratio = if stats.heap_size > 0 {
+                    (stats.allocated_bytes as f64).max(0.0) / (stats.heap_size as f64).max(1.0)
+                } else {
+                    0.0
+                };
+                // Clamp ratio to reasonable bounds (0.0 to 2.0) to handle precision issues
+                ratio.clamp(0.0, 2.0)
+            } else {
+                // Cast to f64 to avoid integer division
+                stats.allocated_bytes as f64 / stats.heap_size as f64
+            }
         }
     }
 }
@@ -227,6 +335,7 @@ impl MemoryManager {
     }
 
     /// Get global memory statistics
+    #[allow(clippy::cast_precision_loss)]
     pub fn global_stats(&self) -> Arc<MemoryStats> {
         // Aggregate stats from all pools
         let pools = self.pools.read();
