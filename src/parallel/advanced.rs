@@ -1,7 +1,7 @@
-use std::time::{Duration, Instant};
 use fork_union::ThreadPool;
 use parking_lot::Mutex;
 use smol_cancellation_token::CancellationToken;
+use std::time::{Duration, Instant};
 
 /// Monitor thread pool performance and statistics.
 ///

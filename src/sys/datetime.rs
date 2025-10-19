@@ -1,4 +1,4 @@
-//! # DateTime Utilities
+//! # `DateTime` Utilities
 //!
 //! This module provides comprehensive date and time utilities with chrono integration,
 //! including serialization support via our serde module and parallel processing capabilities.
@@ -13,7 +13,7 @@
 //!
 //! ## Usage Patterns
 //!
-//! ### Basic DateTime Operations
+//! ### Basic `DateTime` Operations
 //! ```rust
 //! use trash_analyzer::sys::datetime::*;
 //!
@@ -39,9 +39,9 @@
 //! let dates = batch_parse_dates(&date_strings).unwrap();
 //! ```
 
-use chrono::{DateTime, Utc, NaiveDate};
 use crate::parallel;
 use crate::serde;
+use chrono::{DateTime, NaiveDate, Utc};
 
 /// Gets the current UTC time.
 ///
@@ -143,6 +143,9 @@ pub fn parse_date(s: &str) -> Result<NaiveDate, chrono::ParseError> {
 /// - `Ok(String)` containing the JSON representation.
 /// - `Err` if serialization fails.
 ///
+/// # Errors
+/// Returns a boxed error if JSON serialization fails.
+///
 /// # Examples
 /// ```rust
 /// use trash_analyzer::sys::datetime::{current_utc_time, serialize_timestamp};
@@ -163,6 +166,9 @@ pub fn serialize_timestamp(dt: &DateTime<Utc>) -> Result<String, Box<dyn std::er
 /// # Returns
 /// - `Ok(DateTime<Utc>)` if deserialization succeeds.
 /// - `Err` if deserialization fails.
+///
+/// # Errors
+/// Returns a boxed error if JSON deserialization fails.
 ///
 /// # Examples
 /// ```rust
@@ -188,6 +194,9 @@ pub fn deserialize_timestamp(json: &str) -> Result<DateTime<Utc>, Box<dyn std::e
 /// - `Ok(Vec<NaiveDate>)` containing parsed dates in the same order.
 /// - `Err` if any date parsing fails (returns the first error encountered).
 ///
+/// # Errors
+/// Returns a boxed error if any date string cannot be parsed in YYYY-MM-DD format.
+///
 /// # Examples
 /// ```rust
 /// use trash_analyzer::sys::datetime::batch_parse_dates;
@@ -196,8 +205,10 @@ pub fn deserialize_timestamp(json: &str) -> Result<DateTime<Utc>, Box<dyn std::e
 /// let dates = batch_parse_dates(&date_strings).unwrap();
 /// assert_eq!(dates.len(), 3);
 /// ```
-pub fn batch_parse_dates(date_strings: &[&str]) -> Result<Vec<NaiveDate>, Box<dyn std::error::Error>> {
-    parallel::parallel_map(date_strings.to_vec(), |s| parse_date(s))
+pub fn batch_parse_dates(
+    date_strings: &[&str],
+) -> Result<Vec<NaiveDate>, Box<dyn std::error::Error>> {
+    parallel::parallel_map(date_strings.to_vec(), parse_date)
         .into_iter()
         .collect::<Result<Vec<_>, _>>()
         .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
@@ -225,5 +236,5 @@ pub fn batch_parse_dates(date_strings: &[&str]) -> Result<Vec<NaiveDate>, Box<dy
 /// ```
 #[must_use]
 pub fn convert_timezone_offset(dt: &DateTime<Utc>, offset_hours: i32) -> DateTime<Utc> {
-    *dt + chrono::Duration::hours(offset_hours as i64)
+    *dt + chrono::Duration::hours(i64::from(offset_hours))
 }

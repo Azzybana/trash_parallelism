@@ -41,10 +41,10 @@
 //! let values = read_env_vars_parallel(&keys).unwrap();
 //! ```
 
-use std::collections::HashMap;
 use crate::parallel;
 use crate::serde;
 use ::serde::de::DeserializeOwned;
+use std::collections::HashMap;
 
 /// Reads an environment variable as a string.
 ///
@@ -133,6 +133,10 @@ where
 /// - `Ok(T)` if the variable exists and JSON parsing succeeds.
 /// - `Err` if the variable is not set or parsing fails.
 ///
+/// # Errors
+/// - Returns `std::env::VarError` if the environment variable is not set or contains invalid Unicode.
+/// - Returns `serde_json::Error` if the JSON parsing fails.
+///
 /// # Examples
 /// ```rust
 /// use trash_analyzer::sys::env::read_env_var_json;
@@ -176,7 +180,9 @@ where
 #[must_use]
 pub fn read_env_vars_parallel(keys: &[&str]) -> HashMap<String, String> {
     parallel::parallel_map(keys.to_vec(), |key| {
-        std::env::var(key).ok().map(|value| (key.to_string(), value))
+        std::env::var(key)
+            .ok()
+            .map(|value| (key.to_string(), value))
     })
     .into_iter()
     .flatten()
@@ -191,6 +197,9 @@ pub fn read_env_vars_parallel(keys: &[&str]) -> HashMap<String, String> {
 /// # Returns
 /// - `Ok(())` if all required variables are set.
 /// - `Err(Vec<String>)` containing the names of missing variables.
+///
+/// # Errors
+/// Returns a `Vec<String>` containing the names of environment variables that are not set.
 ///
 /// # Examples
 /// ```rust

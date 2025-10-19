@@ -327,6 +327,9 @@ pub fn get_files_metadata_parallel(
 /// - `Ok(String)` containing the JSON representation.
 /// - `Err` if serialization fails.
 ///
+/// # Errors
+/// Returns a boxed error if JSON serialization fails.
+///
 /// # Examples
 /// ```rust,no_run
 /// use trash_analyzer::sys::path::{get_file_metadata, serialize_file_info};
@@ -372,6 +375,9 @@ pub fn serialize_file_info(
 /// - `Ok` with a simple struct containing file info.
 /// - `Err` if deserialization fails.
 ///
+/// # Errors
+/// Returns a boxed error if JSON deserialization fails.
+///
 /// # Examples
 /// ```rust
 /// use trash_analyzer::sys::path::deserialize_file_info;
@@ -391,6 +397,9 @@ pub fn deserialize_file_info(json: &str) -> Result<Value, Box<dyn std::error::Er
 /// # Returns
 /// - `Ok(std::fs::Metadata)` containing file metadata.
 /// - `Err(std::io::Error)` if metadata cannot be read.
+///
+/// # Errors
+/// Returns an `std::io::Error` if the file does not exist, permission is denied, or other I/O error occurs.
 ///
 /// # Examples
 /// ```rust,no_run
@@ -413,6 +422,9 @@ pub fn get_file_metadata_sync(path: &str) -> Result<std::fs::Metadata, std::io::
 /// # Returns
 /// - `Ok(Vec<String>)` containing entry names.
 /// - `Err(std::io::Error)` if directory cannot be read.
+///
+/// # Errors
+/// Returns an `std::io::Error` if the directory does not exist, permission is denied, or other I/O error occurs.
 ///
 /// # Examples
 /// ```rust,no_run
@@ -443,6 +455,9 @@ pub fn list_directory(path: &str) -> Result<Vec<String>, std::io::Error> {
 /// - `Ok(Vec<String>)` containing all file paths found.
 /// - `Err(std::io::Error)` if directory traversal fails.
 ///
+/// # Errors
+/// Returns an `std::io::Error` if the root directory does not exist, permission is denied, or other I/O error occurs during traversal.
+///
 /// # Examples
 /// ```rust,no_run
 /// use trash_analyzer::sys::path::walk_directory;
@@ -453,7 +468,6 @@ pub fn list_directory(path: &str) -> Result<Vec<String>, std::io::Error> {
 /// }
 /// ```
 pub fn walk_directory(root: &str) -> Result<Vec<String>, std::io::Error> {
-    let mut files = Vec::new();
     fn walk(dir: &Path, files: &mut Vec<String>) -> Result<(), std::io::Error> {
         for entry in std::fs::read_dir(dir)? {
             let entry = entry?;
@@ -466,6 +480,7 @@ pub fn walk_directory(root: &str) -> Result<Vec<String>, std::io::Error> {
         }
         Ok(())
     }
+    let mut files = Vec::new();
     walk(Path::new(root), &mut files)?;
     Ok(files)
 }
@@ -482,6 +497,9 @@ pub fn walk_directory(root: &str) -> Result<Vec<String>, std::io::Error> {
 /// # Returns
 /// - `Ok(Vec<String>)` containing matching file paths.
 /// - `Err(std::io::Error)` if directory traversal fails.
+///
+/// # Errors
+/// Returns an `std::io::Error` if the root directory does not exist, permission is denied, or other I/O error occurs during traversal.
 ///
 /// # Examples
 /// ```rust,no_run
