@@ -3,6 +3,136 @@ use serde::{Deserialize, Serialize};
 use smol::fs;
 use std::io::{Read, Write};
 
+/// Streaming serialization for files and network I/O.
+///
+/// This module provides streaming serialization capabilities for efficient
+/// handling of large data structures and network protocols. Supports both
+/// synchronous file I/O and asynchronous operations with futures.
+///
+/// ## Features
+///
+/// - **Streaming I/O**: Direct serialization to/from readers and writers
+/// - **Async Support**: Non-blocking file operations with async/await
+/// - **Memory Efficient**: Process large data without loading everything into memory
+/// - **Network Ready**: Compatible with TCP streams and other I/O sources
+/// - **Error Propagation**: Comprehensive error handling for I/O operations
+/// - **Pretty Printing**: Formatted JSON output for configuration files
+///
+/// ## Examples
+///
+/// ### File-Based Configuration
+/// ```rust,no_run
+/// use trash_utilities::serde::{serialize_pretty_to_writer, deserialize_from_reader};
+/// use serde::{Serialize, Deserialize};
+/// use std::fs::File;
+///
+/// #[derive(Serialize, Deserialize, Debug)]
+/// struct AppConfig {
+///     database_url: String,
+///     max_connections: u32,
+///     features: Vec<String>,
+/// }
+///
+/// let config = AppConfig {
+///     database_url: "postgres://localhost/app".to_string(),
+///     max_connections: 50,
+///     features: vec!["logging".to_string(), "metrics".to_string()],
+/// };
+///
+/// // Write pretty-printed config to file
+/// let mut file = File::create("config.json").unwrap();
+/// serialize_pretty_to_writer(&mut file, &config).unwrap();
+///
+/// // Read config back
+/// let file = File::open("config.json").unwrap();
+/// let loaded: AppConfig = deserialize_from_reader(file).unwrap();
+/// assert_eq!(config.database_url, loaded.database_url);
+/// ```
+///
+/// ### Async File Operations
+/// ```rust,no_run
+/// use trash_utilities::serde::{serialize_to_file_async, deserialize_from_file_async};
+/// use serde::{Serialize, Deserialize};
+///
+/// #[derive(Serialize, Deserialize, Debug, PartialEq)]
+/// struct UserData {
+///     id: u64,
+///     preferences: std::collections::HashMap<String, String>,
+/// }
+///
+/// async fn save_and_load_user() -> Result<(), Box<dyn std::error::Error>> {
+///     let user = UserData {
+///         id: 12345,
+///         preferences: [("theme".to_string(), "dark".to_string())].into(),
+///     };
+///
+///     // Save asynchronously
+///     serialize_to_file_async(&user, "user.json").await?;
+///
+///     // Load asynchronously
+///     let loaded: UserData = deserialize_from_file_async("user.json").await?;
+///     assert_eq!(user, loaded);
+///
+///     Ok(())
+/// }
+/// ```
+///
+/// ### Network Protocol Streaming
+/// ```rust,no_run
+/// use trash_utilities::serde::serialize_to_writer;
+/// use serde::Serialize;
+/// use std::net::TcpStream;
+///
+/// #[derive(Serialize)]
+/// struct ApiRequest {
+///     method: String,
+///     path: String,
+///     headers: std::collections::HashMap<String, String>,
+/// }
+///
+/// fn send_request(stream: &mut TcpStream) -> Result<(), Box<dyn std::error::Error>> {
+///     let request = ApiRequest {
+///         method: "POST".to_string(),
+///         path: "/api/data".to_string(),
+///         headers: [("content-type".to_string(), "application/json".to_string())].into(),
+///     };
+///
+///     // Stream JSON directly to network
+///     serialize_to_writer(stream, &request)?;
+///     Ok(())
+/// }
+/// ```
+///
+/// ### Large Data Processing
+/// ```rust,no_run
+/// use trash_utilities::serde::deserialize_from_reader;
+/// use serde::Deserialize;
+/// use std::fs::File;
+/// use std::io::BufReader;
+///
+/// #[derive(Deserialize)]
+/// struct LargeDataset {
+///     records: Vec<Record>,
+/// }
+///
+/// #[derive(Deserialize)]
+/// struct Record {
+///     id: u64,
+///     data: Vec<f64>,
+/// }
+///
+/// fn process_large_file() -> Result<(), Box<dyn std::error::Error>> {
+///     // Use buffered reader for efficiency
+///     let file = File::open("large_dataset.json")?;
+///     let reader = BufReader::new(file);
+///
+///     // Stream deserialize without loading entire file into memory
+///     let dataset: LargeDataset = deserialize_from_reader(reader)?;
+///     
+///     println!("Processed {} records", dataset.records.len());
+///     Ok(())
+/// }
+/// ```
 /// Serialize a value to JSON and write it to a writer.
 ///
 /// This function serializes a value to JSON and writes it directly to any type

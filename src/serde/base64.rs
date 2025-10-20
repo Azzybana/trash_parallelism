@@ -1,7 +1,65 @@
-/// Encode data as base64 string.
+/// Base64 encoding and decoding utilities for binary data serialization.
 ///
-/// This function encodes binary data to a base64 string using standard encoding.
-/// Useful for transmitting binary data over text-based protocols.
+/// This module provides efficient base64 encoding/decoding operations,
+/// including direct binary data conversion and JSON-embedded serialization.
+/// Built on the standard base64 encoding with optimized performance.
+///
+/// ## Features
+///
+/// - **Binary Data Encoding**: Convert binary data to base64 strings for text protocols
+/// - **JSON Integration**: Embed structured data in JSON using base64 encoding
+/// - **Round-trip Safety**: Guaranteed lossless encoding/decoding
+/// - **Standard Compliance**: RFC 4648 base64 encoding
+/// - **Error Handling**: Comprehensive error reporting for invalid input
+///
+/// ## Examples
+///
+/// ### Basic Binary Encoding
+/// ```rust
+/// use trash_utilities::serde::{encode_base64, decode_base64};
+///
+/// let binary_data = b"Hello, World! This is binary data.";
+/// let encoded = encode_base64(binary_data);
+/// let decoded = decode_base64(&encoded).unwrap();
+/// assert_eq!(binary_data.to_vec(), decoded);
+/// ```
+///
+/// ### JSON with Embedded Binary Data
+/// ```rust
+/// use trash_utilities::serde::{serialize_to_base64_json, deserialize_from_base64_json};
+/// use serde::{Serialize, Deserialize};
+///
+/// #[derive(Serialize, Deserialize, Debug, PartialEq)]
+/// struct Message {
+///     text: String,
+///     binary_attachment: Vec<u8>,
+/// }
+///
+/// let message = Message {
+///     text: "Check out this file!".to_string(),
+///     binary_attachment: vec![0xFF, 0xD8, 0xFF, 0xE0], // JPEG header
+/// };
+///
+/// // Serialize with binary data embedded as base64
+/// let b64_json = serialize_to_base64_json(&message).unwrap();
+/// let decoded: Message = deserialize_from_base64_json(&b64_json).unwrap();
+/// assert_eq!(message, decoded);
+/// ```
+///
+/// ### Protocol Buffers over HTTP
+/// ```rust
+/// use trash_utilities::serde::{encode_base64, decode_base64};
+///
+/// // Simulate sending protobuf data over HTTP
+/// let protobuf_bytes = vec![0x08, 0x96, 0x01, 0x12, 0x07, 0x74, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x67];
+/// let b64_payload = encode_base64(&protobuf_bytes);
+///
+/// // Send b64_payload in HTTP request...
+/// // Later, decode back to protobuf
+/// let recovered_bytes = decode_base64(&b64_payload).unwrap();
+/// assert_eq!(protobuf_bytes, recovered_bytes);
+/// ```
+/// Encode data as base64 string.
 ///
 /// # Parameters
 /// - `data`: The binary data to encode.

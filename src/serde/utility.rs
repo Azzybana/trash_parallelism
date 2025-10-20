@@ -4,6 +4,115 @@ use memchr::memchr;
 use serde::{Deserialize, Serialize};
 use std::hash::Hasher;
 
+/// Utility functions for advanced JSON processing and metadata handling.
+///
+/// This module provides specialized utilities for JSON operations including
+/// fast hashing, timestamping, logging, and efficient key/value extraction.
+/// Designed for high-performance applications requiring additional metadata
+/// and debugging capabilities.
+///
+/// ## Features
+///
+/// - **Fast Hashing**: Non-cryptographic hashing using ahash for performance
+/// - **Timestamp Metadata**: Automatic timestamping for audit trails
+/// - **Operation Logging**: Debug logging for serialization operations
+/// - **Key Extraction**: Efficient JSON key searching and value extraction
+/// - **Memory Efficient**: Optimized string operations using memchr
+/// - **Type Safe**: Full compile-time type checking with serde
+///
+/// ## Examples
+///
+/// ### Fast Content Hashing
+/// ```rust
+/// use trash_utilities::serde::hash_json_ahash;
+/// use serde::Serialize;
+///
+/// #[derive(Serialize)]
+/// struct Document {
+///     id: u64,
+///     title: String,
+///     content: String,
+/// }
+///
+/// let doc = Document {
+///     id: 123,
+///     title: "Important Document".to_string(),
+///     content: "This is the document content...".to_string(),
+/// };
+///
+/// let hash = hash_json_ahash(&doc).unwrap();
+/// println!("Document hash: {}", hash);
+/// // Use hash for caching, deduplication, or change detection
+/// ```
+///
+/// ### Timestamped Operations
+/// ```rust
+/// use trash_utilities::serde::{serialize_with_timestamp, deserialize_with_timestamp};
+/// use serde::Serialize;
+/// use chrono::{DateTime, Utc};
+///
+/// #[derive(Serialize, serde::Deserialize, Debug)]
+/// struct UserAction {
+///     user_id: u64,
+///     action: String,
+/// }
+///
+/// let action = UserAction {
+///     user_id: 456,
+///     action: "login".to_string(),
+/// };
+///
+/// // Serialize with automatic timestamp
+/// let json = serialize_with_timestamp(&action, "user_action").unwrap();
+/// println!("{}", json);
+/// // {"timestamp":"2025-10-19T...","operation":"user_action","data":{...}}
+///
+/// // Deserialize with metadata
+/// let (data, timestamp, operation): (UserAction, DateTime<Utc>, String) =
+///     deserialize_with_timestamp(&json).unwrap();
+/// ```
+///
+/// ### JSON Key Operations
+/// ```rust
+/// use trash_utilities::serde::{json_contains_key, extract_json_value};
+///
+/// let user_json = r#"{
+///     "id": 123,
+///     "name": "Alice",
+///     "email": "alice@example.com",
+///     "active": true
+/// }"#;
+///
+/// // Fast key existence check
+/// assert!(json_contains_key(user_json, "name"));
+/// assert!(!json_contains_key(user_json, "phone"));
+///
+/// // Extract specific values
+/// assert_eq!(extract_json_value(user_json, "name"), Some(r#""Alice""#.to_string()));
+/// assert_eq!(extract_json_value(user_json, "id"), Some("123".to_string()));
+/// assert_eq!(extract_json_value(user_json, "phone"), None);
+/// ```
+///
+/// ### Debug Logging
+/// ```rust
+/// use trash_utilities::serde::serialize_with_logging;
+/// use serde::Serialize;
+///
+/// #[derive(Serialize)]
+/// struct ApiRequest {
+///     endpoint: String,
+///     params: std::collections::HashMap<String, String>,
+/// }
+///
+/// let request = ApiRequest {
+///     endpoint: "/api/users".to_string(),
+///     params: [("limit".to_string(), "10".to_string())].into(),
+/// };
+///
+/// // Serialize with debug logging
+/// let json = serialize_with_logging(&request, "api_request").unwrap();
+/// // Output: Serializing with context: api_request
+/// ```
 /// Compute a fast non-cryptographic hash of serialized JSON.
 ///
 /// This function uses ahash for fast hashing, suitable for hash tables

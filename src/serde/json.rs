@@ -1,5 +1,117 @@
 use serde::{Deserialize, Serialize};
 
+/// JSON serialization and deserialization utilities.
+///
+/// This module provides comprehensive JSON handling with both compact and
+/// pretty-printed output, validation, and efficient parsing. Built on `serde_json`
+/// for maximum performance and compatibility.
+///
+/// ## Features
+///
+/// - **Compact Serialization**: Minified JSON for network efficiency
+/// - **Pretty Printing**: Human-readable formatted JSON for debugging
+/// - **Type Validation**: Runtime JSON structure validation
+/// - **Flexible Parsing**: Support for owned and borrowed data
+/// - **Error Handling**: Detailed error reporting with context
+/// - **Performance Optimized**: Zero-copy operations where possible
+///
+/// ## Examples
+///
+/// ### Basic Serialization
+/// ```rust
+/// use trash_utilities::serde::{serialize_to_json, deserialize_from_json};
+/// use serde::{Serialize, Deserialize};
+///
+/// #[derive(Serialize, Deserialize, Debug, PartialEq)]
+/// struct User {
+///     id: u32,
+///     name: String,
+///     email: String,
+/// }
+///
+/// let user = User {
+///     id: 123,
+///     name: "Alice Johnson".to_string(),
+///     email: "alice@example.com".to_string(),
+/// };
+///
+/// // Serialize to compact JSON
+/// let json = serialize_to_json(&user).unwrap();
+/// assert_eq!(json, r#"{"id":123,"name":"Alice Johnson","email":"alice@example.com"}"#);
+///
+/// // Deserialize back
+/// let recovered: User = deserialize_from_json(&json).unwrap();
+/// assert_eq!(user, recovered);
+/// ```
+///
+/// ### Pretty Printing for Configuration
+/// ```rust
+/// use trash_utilities::serde::pretty_json;
+/// use serde::Serialize;
+///
+/// #[derive(Serialize)]
+/// struct Config {
+///     database_url: String,
+///     max_connections: u32,
+///     features: Vec<String>,
+/// }
+///
+/// let config = Config {
+///     database_url: "postgres://localhost/mydb".to_string(),
+///     max_connections: 100,
+///     features: vec!["ssl".to_string(), "compression".to_string()],
+/// };
+///
+/// let pretty = pretty_json(&config).unwrap();
+/// println!("{}", pretty);
+/// // Output:
+/// // {
+/// //   "database_url": "postgres://localhost/mydb",
+/// //   "max_connections": 100,
+/// //   "features": [
+/// //     "ssl",
+/// //     "compression"
+/// //   ]
+/// // }
+/// ```
+///
+/// ### JSON Validation
+/// ```rust
+/// use trash_utilities::serde::validate_json;
+/// use serde::{Serialize, Deserialize};
+///
+/// #[derive(Serialize, Deserialize, Debug)]
+/// struct ApiResponse {
+///     status: String,
+///     data: Vec<String>,
+/// }
+///
+/// let json = r#"{
+///     "status": "success",
+///     "data": ["item1", "item2"]
+/// }"#;
+///
+/// // Validate and parse
+/// let response: ApiResponse = validate_json(json).unwrap();
+/// assert_eq!(response.status, "success");
+/// assert_eq!(response.data.len(), 2);
+/// ```
+///
+/// ### Error Handling
+/// ```rust
+/// use trash_utilities::serde::deserialize_from_json;
+///
+/// #[derive(serde::Deserialize, Debug)]
+/// struct Person { name: String, age: u32 }
+///
+/// // Invalid JSON
+/// let result: Result<Person, _> = deserialize_from_json(r#"{"name": "Alice", "age": "thirty"}"#);
+/// assert!(result.is_err()); // Age should be a number
+///
+/// // Missing required field
+/// let result2: Result<Person, _> = deserialize_from_json(r#"{"name": "Bob"}"#);
+/// assert!(result2.is_err()); // Missing age field
+/// ```
 /// Serialize a struct to a compact JSON string.
 ///
 /// This function converts any serializable type into a minified JSON string.
