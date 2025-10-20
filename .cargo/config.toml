@@ -1,6 +1,7 @@
 [alias]
     t = "nextest run --no-fail-fast --config-file .cargo/nextest.toml"
     c = "llvm-cov nextest --no-fail-fast --config-file .cargo/nextest.toml --html --output-dir coverage"
+    l = "llvm-cov nextest --no-fail-fast --config-file .cargo/nextest.toml --lcov --output-path lcov.info"
 
 [build]
     rustdocflags = ["--default-theme", "trash", "--theme", "doc/trash.css"]
