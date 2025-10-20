@@ -128,7 +128,7 @@ pub fn test_hash_data_async() {
 #[test]
 pub fn test_encode_base64_async() {
     smol::block_on(async {
-        let data = b"Hello, world!";
+        let data = b"Hello!";
         let encoded = data::encode_base64_async(data).await;
         assert!(!encoded.is_empty());
         // Should not contain padding for this input
@@ -139,7 +139,7 @@ pub fn test_encode_base64_async() {
 #[test]
 pub fn test_decode_base64_async() {
     smol::block_on(async {
-        let data = b"Hello, world!";
+        let data = b"Hello!";
         let encoded = data::encode_base64_async(data).await;
         let decoded = data::decode_base64_async(&encoded).await.unwrap();
         assert_eq!(decoded, data);

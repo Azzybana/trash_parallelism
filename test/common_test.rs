@@ -17,7 +17,7 @@ pub fn test_wrap_bytes() {
 
 #[test]
 pub fn test_encode_base64() {
-    let data = b"Hello, world!";
+    let data = b"Hello!";
     let encoded = crypto::encode_base64(data);
     assert!(!encoded.is_empty());
     // Should not contain padding for this input
@@ -26,7 +26,7 @@ pub fn test_encode_base64() {
 
 #[test]
 pub fn test_decode_base64() {
-    let data = b"Hello, world!";
+    let data = b"Hello!";
     let encoded = crypto::encode_base64(data);
     let decoded = crypto::decode_base64(&encoded).unwrap();
     assert_eq!(decoded, data);
