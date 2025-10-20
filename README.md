@@ -57,7 +57,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-trash_parallelism = { path = "path/to/trash_utilities" }
+trash_parallelism = { git = "https://github.com/Azzybana/trash_parallelism" }
 ```
 
 Note: This library is currently set to `publish = false` in Cargo.toml, so it's intended for local use only.
@@ -159,50 +159,6 @@ for _ in 0..5 {
 let stats = monitor.get_stats();
 println!("Processed {} messages", stats.messages_sent);
 # });
-```
-
-## API Reference
-
-Full API documentation is available by running:
-
-```bash
-cargo doc --open
-```
-
-This will generate and open the documentation in your default browser.
-
-## Building
-
-```bash
-cargo build
-```
-
-For optimized release build:
-
-```bash
-cargo build --release
-```
-
-## Testing
-
-Run the test suite:
-
-```bash
-cargo test
-```
-
-Run with performance benchmarks:
-
-```bash
-cargo test --release -- --nocapture
-```
-
-## Documentation
-
-Generate and view documentation:
-
-```bash
-cargo doc --open
 ```
 
 ## Project Structure
