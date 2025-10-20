@@ -61,6 +61,9 @@ pub fn test_hash_and_encode_base64() {
             .chars()
             .all(|c| c.is_alphanumeric() || c == '+' || c == '/' || c == '=')
     );
+    // Should be able to decode back to bytes
+    let decoded = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &encoded_hash).unwrap();
+    assert_eq!(decoded.len(), 8); // u64 is 8 bytes
 }
 
 #[test]
@@ -203,4 +206,42 @@ pub fn test_extract_json_values_by_key() {
 #[should_panic(expected = "called `Result::unwrap()` on an `Err` value")]
 fn test_extract_json_values_by_key_invalid() {
     let _ = processing::extract_json_values_by_key("invalid json", "key").unwrap();
+}
+
+#[test]
+pub fn test_read_file_to_string_async() {
+    smol::block_on(async {
+        // Test with non-existent file
+        let result = processing::read_file_to_string_async("non_existent_file.txt").await;
+        assert!(result.is_err());
+
+        // Test with existing file (create temp file)
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let test_content = "Hello, async world!";
+        std::fs::write(temp_file.path(), test_content).unwrap();
+
+        let content = processing::read_file_to_string_async(
+            temp_file.path().to_str().unwrap()
+        ).await.unwrap();
+        assert_eq!(content, test_content);
+    });
+}
+
+#[test]
+pub fn test_write_string_to_file_async() {
+    smol::block_on(async {
+        // Create temp file for writing
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let test_content = "Writing async content to file!";
+
+        // Write content
+        processing::write_string_to_file_async(
+            temp_file.path().to_str().unwrap(),
+            test_content
+        ).await.unwrap();
+
+        // Read back and verify
+        let read_content = std::fs::read_to_string(temp_file.path()).unwrap();
+        assert_eq!(read_content, test_content);
+    });
 }
