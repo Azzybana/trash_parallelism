@@ -1,11 +1,9 @@
 //! Tests for the memory module
 
-#[cfg(test)]
-mod tests {
+pub mod tests {
     use trash_utilities::memory::*;
 
-    #[test]
-    fn test_memory_basic() {
+    pub fn test_memory_basic() {
         // Basic test placeholder
         assert!(true);
     }

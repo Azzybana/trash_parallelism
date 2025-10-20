@@ -1,11 +1,9 @@
 //! Tests for the async module
 
-#[cfg(test)]
-mod tests {
-    use trash_utilities::async::*;
+pub mod tests {
+    use trash_utilities::r#async::*;
 
-    #[test]
-    fn test_async_basic() {
+    pub fn test_async_basic() {
         // Basic test placeholder
         assert!(true);
     }

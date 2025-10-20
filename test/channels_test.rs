@@ -1,11 +1,9 @@
 //! Tests for the channels module
 
-#[cfg(test)]
-mod tests {
+pub mod tests {
     use trash_utilities::channels::*;
 
-    #[test]
-    fn test_channels_basic() {
+    pub fn test_channels_basic() {
         // Basic test placeholder
         assert!(true);
     }

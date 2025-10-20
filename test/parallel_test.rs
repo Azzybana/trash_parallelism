@@ -1,11 +1,9 @@
 //! Tests for the parallel module
 
-#[cfg(test)]
-mod tests {
+pub mod tests {
     use trash_utilities::parallel::*;
 
-    #[test]
-    fn test_parallel_basic() {
+    pub fn test_parallel_basic() {
         // Basic test placeholder
         assert!(true);
     }

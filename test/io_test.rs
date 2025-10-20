@@ -1,11 +1,9 @@
 //! Tests for the io module
 
-#[cfg(test)]
-mod tests {
+pub mod tests {
     use trash_utilities::io::*;
 
-    #[test]
-    fn test_io_basic() {
+    pub fn test_io_basic() {
         // Basic test placeholder
         assert!(true);
     }

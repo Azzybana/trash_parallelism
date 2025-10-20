@@ -1,11 +1,9 @@
 //! Tests for the serde module
 
-#[cfg(test)]
-mod tests {
+pub mod tests {
     use trash_utilities::serde::*;
 
-    #[test]
-    fn test_serde_basic() {
+    pub fn test_serde_basic() {
         // Basic test placeholder
         assert!(true);
     }

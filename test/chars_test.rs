@@ -1,11 +1,9 @@
 //! Tests for the chars module
 
-#[cfg(test)]
-mod tests {
+pub mod tests {
     use trash_utilities::chars::*;
 
-    #[test]
-    fn test_chars_basic() {
+    pub fn test_chars_basic() {
         // Basic test placeholder
         assert!(true);
     }

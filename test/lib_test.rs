@@ -1,11 +1,9 @@
 //! Tests for the lib module
 
-#[cfg(test)]
-mod tests {
+pub mod tests {
     use trash_utilities::*;
 
-    #[test]
-    fn test_lib_basic() {
+    pub fn test_lib_basic() {
         // Basic test placeholder
         assert!(true);
     }

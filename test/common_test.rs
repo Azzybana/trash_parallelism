@@ -1,11 +1,9 @@
 //! Tests for the common module
 
-#[cfg(test)]
-mod tests {
+pub mod tests {
     use trash_utilities::common::*;
 
-    #[test]
-    fn test_common_basic() {
+    pub fn test_common_basic() {
         // Basic test placeholder
         assert!(true);
     }
