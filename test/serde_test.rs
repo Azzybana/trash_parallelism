@@ -308,8 +308,11 @@ pub fn test_serialize_to_file_async() {
     });
 
     let contents = fs::read_to_string(&path).unwrap();
-    assert!(contents.contains("test"));
-    assert!(contents.contains("42"));
+    // Parse JSON and assert fields to avoid fragile string matching across
+    // platforms and serialization ordering.
+    let parsed: serde_json::Value = serde_json::from_str(&contents).unwrap();
+    assert_eq!(parsed["name"], "test");
+    assert_eq!(parsed["value"], 42);
 
     fs::remove_file(&path).unwrap();
 }

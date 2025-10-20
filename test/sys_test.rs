@@ -351,12 +351,12 @@ pub fn test_sys() {
     test_parse_datetime();
     test_parse_date();
     test_serialize_deserialize_timestamp();
-    test_deserialize_timestamp_invalid();
+    // negative tests that use should_panic are executed by the test runner
+    // directly; do not call them from this aggregator to avoid panics here.
     test_batch_parse_dates();
     test_convert_timezone_offset();
     test_read_env_var_or();
     test_read_env_var_parse();
-    test_read_env_var_parse_invalid();
     test_validate_required_env_vars();
     test_validate_required_env_vars_missing();
     test_normalize_path();
@@ -366,24 +366,17 @@ pub fn test_sys() {
     test_is_file();
     test_is_directory();
     test_get_file_size();
-    test_get_file_size_nonexistent();
     test_create_temp_file();
     test_list_directory();
-    test_list_directory_nonexistent();
     test_timer_elapsed();
     test_read_env_var();
     test_read_env_var_json();
-    test_read_env_var_json_invalid();
     test_read_env_vars_parallel();
     test_get_file_metadata();
-    test_get_file_metadata_nonexistent();
     test_get_file_modified_time();
-    test_get_file_modified_time_nonexistent();
     test_get_files_metadata_parallel();
     test_serialize_file_info();
     test_deserialize_file_info();
     test_walk_directory();
-    test_walk_directory_nonexistent();
     test_find_files_parallel();
-    test_find_files_parallel_nonexistent();
 }
