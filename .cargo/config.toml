@@ -1,6 +1,10 @@
 [build]
     rustdocflags = ["--default-theme", "trash", "--theme", "doc/trash.css"]
 
+[env]
+    RUST_TEST_TIME_UNIT = "2000,6000"
+    RUST_TEST_TIME_INTEGRATION = "2000,6000"
+    RUST_TEST_TIME_DOCTEST = "2000,6000"
+
 [profile.test]
-    timeout = "10s"
-    slow-timeout = "5s"
+    runner-args = ["--ensure-time", "--report-time"]

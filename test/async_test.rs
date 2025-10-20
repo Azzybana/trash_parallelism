@@ -59,10 +59,11 @@ pub fn test_create_mutex() {
 #[test]
 pub fn test_compress_data_async() {
     smol::block_on(async {
-        let data = b"Hello, world! This is test data for compression.";
+        let data = b"This is a longer test data string that should be more compressible because it contains repeated patterns and more content to work with for compression algorithms. This will help ensure that the compression actually reduces the size.";
         let compressed = data::compress_data_async(data, 6).await.unwrap();
         assert!(!compressed.is_empty());
-        assert!(compressed.len() < data.len()); // Should be smaller for compressible data
+        // For compressible data, compressed should be smaller
+        assert!(compressed.len() < data.len());
     });
 }
 

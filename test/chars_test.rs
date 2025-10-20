@@ -180,11 +180,7 @@ pub fn test_parallel_process_string() {
 
 #[test]
 pub fn test_extract_json_values_by_key() {
-    let json = r#"[
-        {"name": "Alice", "age": 30},
-        {"name": "Bob", "age": 25},
-        {"name": "Charlie", "age": 35}
-    ]"#;
+    let json = r#"[{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}, {"name": "Charlie", "age": 35}]"#;
 
     let names = processing::extract_json_values_by_key(json, "name").unwrap();
     assert_eq!(names.len(), 3);

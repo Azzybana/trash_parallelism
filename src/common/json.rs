@@ -274,12 +274,11 @@ pub fn extract_json_path(
     for segment in path.split('.') {
         match current {
             serde_json::Value::Object(obj) => {
-                current = obj.get(segment).ok_or_else(|| {
-                    std::io::Error::new(
-                        std::io::ErrorKind::NotFound,
-                        format!("Path segment '{segment}' not found"),
-                    )
-                })?;
+                if let Some(next) = obj.get(segment) {
+                    current = next;
+                } else {
+                    return Ok(None);
+                }
             }
             _ => {
                 return Err(Box::new(std::io::Error::new(

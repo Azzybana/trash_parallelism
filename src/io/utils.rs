@@ -407,21 +407,25 @@ where
         let mut map = self.map.lock();
         let mut order = self.order.lock();
 
-        if map.contains_key(&key) {
+        let was_present = map.contains_key(&key);
+        if was_present {
             // Update existing - move to front
             if let Some(pos) = order.iter().position(|k| k == &key) {
                 order.remove(pos);
-            }
-        } else if map.len() >= self.capacity {
-            // Remove least recently used (oldest)
-            if let Some(oldest) = order.first().cloned() {
-                map.remove(&oldest);
-                order.remove(0);
             }
         }
 
         map.insert(key.clone(), value);
         order.push(key);
+
+        // Evict if over capacity and this was a new insertion
+        if !was_present
+            && map.len() > self.capacity
+            && let Some(oldest) = order.first().cloned()
+        {
+            map.remove(&oldest);
+            order.remove(0);
+        }
     }
 
     /// Get the current number of items in the cache
