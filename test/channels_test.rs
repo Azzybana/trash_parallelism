@@ -364,6 +364,46 @@ pub fn test_work_queue_round_robin() {
 }
 
 #[test]
+pub fn test_work_queue_collect() {
+    smol::block_on(async {
+        // Create a queue with a processor that sends results
+        let queue = queue::WorkQueue::<String, String>::new(1);
+        
+        // Submit a task - since workers don't actually process in the current impl,
+        // we'll manually send a result to test collect
+        // Note: This tests the collect method but not the full pipeline
+        // In a real scenario, workers would send results via the result_tx
+        
+        // For now, just test that collect doesn't panic on empty queue
+        let result = queue.collect().await;
+        assert!(result.is_err()); // Should timeout/error on empty queue
+    });
+}
+
+#[test]
+pub fn test_work_queue_zero_workers() {
+    // Test edge case: queue with 0 workers
+    let queue = queue::WorkQueue::<String, String>::new(0);
+    // Should create successfully but submitting should fail
+    smol::block_on(async {
+        let result = queue.submit("task".to_string()).await;
+        assert!(result.is_err()); // Should fail with no workers
+    });
+}
+
+#[test]
+pub fn test_work_queue_large_number_workers() {
+    // Test with many workers
+    let queue = queue::WorkQueue::<i32, String>::new(10);
+    smol::block_on(async {
+        // Submit tasks that should distribute across all workers
+        for i in 0..20 {
+            queue.submit(i).await.unwrap();
+        }
+    });
+}
+
+#[test]
 pub fn test_base64_channel() {
     let (tx, _) = core::bounded_queue_3::<String>(1);
     let channel = specialist::Base64Channel::new(tx);

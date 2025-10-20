@@ -73,7 +73,8 @@ impl<T: Send + 'static, R: Send + 'static> WorkQueue<T, R> {
     pub fn new(num_workers: usize) -> Self {
         let mut workers = Vec::new();
         let _result_txs: Vec<crate::channels::core::TxFuture<R>> = Vec::new();
-        let (result_tx, result_rx) = crate::channels::core::bounded_queue_3(num_workers * 10);
+        let capacity = (num_workers * 10).max(1); // Ensure minimum capacity of 1
+        let (result_tx, result_rx) = crate::channels::core::bounded_queue_3(capacity);
 
         for _ in 0..num_workers {
             let (task_tx, task_rx) = crate::channels::core::bounded_queue_3(100);
@@ -120,6 +121,9 @@ impl<T: Send + 'static, R: Send + 'static> WorkQueue<T, R> {
     /// # });
     /// ```
     pub async fn submit(&self, task: T) -> Result<(), smol::channel::SendError<T>> {
+        if self.workers.is_empty() {
+            return Err(smol::channel::SendError(task));
+        }
         let worker_index = {
             let mut next = self.next_worker.lock();
             let index = *next % self.workers.len();
