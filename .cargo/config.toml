@@ -3,3 +3,4 @@
 
 [profile.test]
     timeout = "10s"
+    slow-timeout = "5s"
