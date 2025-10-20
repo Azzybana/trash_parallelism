@@ -1,34 +1,63 @@
-/// Execute a closure.
+/// Core parallel processing primitives.
 ///
-/// This function executes the closure.
+/// This module provides the fundamental building blocks for parallel computation
+/// in Rust. It offers a clean, safe interface for common parallel operations
+/// like mapping, filtering, and folding over collections.
 ///
-/// # Type Parameters
-/// - `F`: The type of the closure, must be `FnOnce() -> R`.
-/// - `R`: The return type.
+/// ## Features
 ///
-/// # Parameters
-/// - `f`: The closure to execute.
+/// - **Parallel Map**: Apply functions to each element concurrently
+/// - **Parallel Filter**: Filter elements based on predicates in parallel
+/// - **Parallel Fold**: Combine elements using associative operations
+/// - **Parallel For-Each**: Execute side effects on each element concurrently
+/// - **Type Safety**: Full compile-time type checking and safety guarantees
+/// - **Performance**: Optimized for both CPU-bound and I/O-bound workloads
 ///
-/// # Returns
-/// The result of executing the closure.
+/// ## Design Principles
 ///
-/// # Examples
-/// ```rust,no_run
-/// use trash_analyzer::parallel::execute;
+/// - **Zero-Cost Abstractions**: No runtime overhead for unused features
+/// - **Composable**: Operations can be chained and combined
+/// - **Memory Safe**: All operations respect Rust's ownership and borrowing rules
+/// - **Thread Safe**: Designed for concurrent execution across multiple threads
 ///
-/// let result = execute(|| {
-///     // Some computation
-///     42
-/// });
-/// assert_eq!(result, 42);
+/// ## Examples
+///
+/// ### Basic Parallel Mapping
+/// ```rust
+/// use trash_utilities::parallel::parallel_map;
+///
+/// let data = vec![1, 2, 3, 4, 5];
+/// let doubled = parallel_map(data, |x| x * 2);
+/// assert_eq!(doubled, vec![2, 4, 6, 8, 10]);
 /// ```
-pub fn execute<F, R>(f: F) -> R
-where
-    F: FnOnce() -> R,
-{
-    f()
-}
-
+///
+/// ### Parallel Filtering with Side Effects
+/// ```rust
+/// use trash_utilities::parallel::{parallel_filter, parallel_for_each};
+/// use std::sync::Mutex;
+///
+/// let data = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+/// let evens = parallel_filter(data, |&x| x % 2 == 0);
+///
+/// let processed_count = Mutex::new(0);
+/// parallel_for_each(evens.clone(), |_| {
+///     *processed_count.lock().unwrap() += 1;
+/// });
+///
+/// assert_eq!(*processed_count.lock().unwrap(), 5);
+/// ```
+///
+/// ### Parallel Folding
+/// ```rust
+/// use trash_utilities::parallel::parallel_fold;
+///
+/// let data = vec![1, 2, 3, 4, 5];
+/// let sum = parallel_fold(data, 0, |acc, x| acc + x);
+/// let product = parallel_fold(vec![2, 3, 4], 1, |acc, x| acc * x);
+///
+/// assert_eq!(sum, 15);
+/// assert_eq!(product, 24);
+/// ```
 /// Apply a function to each element of a vector in parallel.
 ///
 /// This function provides a parallel-ready interface for mapping operations.

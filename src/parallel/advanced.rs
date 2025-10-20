@@ -3,10 +3,78 @@ use parking_lot::Mutex;
 use smol_cancellation_token::CancellationToken;
 use std::time::{Duration, Instant};
 
-/// Monitor thread pool performance and statistics.
+/// Advanced parallel processing utilities with monitoring and async support.
 ///
-/// This struct tracks execution times and provides performance metrics
-/// for thread pool operations.
+/// This module provides sophisticated parallel processing capabilities including
+/// performance monitoring, work distribution, task queues, and async operations.
+/// Built on top of the core parallel primitives with additional features for
+/// production workloads.
+///
+/// ## Features
+///
+/// - **Performance Monitoring**: Thread pool statistics and operation timing
+/// - **Work Distribution**: Load balancing across available threads
+/// - **Task Queues**: Channel-based work-stealing task processing
+/// - **Cancellation Support**: Graceful cancellation of parallel operations
+/// - **Async Parallelism**: Futures-based concurrent processing
+/// - **File Processing**: Parallel file operations with error handling
+///
+/// ## Examples
+///
+/// ### Performance Monitoring
+/// ```rust
+/// use trash_utilities::parallel::*;
+/// use std::time::Duration;
+///
+/// let monitor = ThreadPoolMonitor::new();
+///
+/// // Monitor expensive operations
+/// let result = monitored_execute(&monitor, "data_processing", || {
+///     // Simulate expensive work
+///     std::thread::sleep(Duration::from_millis(100));
+///     vec![1, 2, 3, 4, 5]
+/// });
+///
+/// let stats = monitor.stats();
+/// println!("Completed {} operations, avg time: {:?}",
+///          stats.total_operations,
+///          stats.average_time.map(|t| Duration::from_secs(t)));
+/// ```
+///
+/// ### Work Distribution
+/// ```rust
+/// use trash_utilities::parallel::distribute_work;
+///
+/// let large_dataset = (0..1000).collect::<Vec<_>>();
+///
+/// // Process data in chunks across threads
+/// let chunk_sums = distribute_work(&large_dataset, |chunk| {
+///     chunk.iter().sum::<i32>()
+/// });
+///
+/// let total: i32 = chunk_sums.iter().sum();
+/// println!("Total sum: {}", total);
+/// ```
+///
+/// ### Task Queue Processing
+/// ```rust,no_run
+/// use trash_utilities::parallel::create_work_queue;
+/// use smol::channel::Sender;
+///
+/// // Create a task queue for processing jobs
+/// let tx: Sender<String> = create_work_queue(10, |job| {
+///     println!("Processing job: {}", job);
+///     // Process the job...
+/// });
+///
+/// // Submit tasks asynchronously
+/// smol::spawn(async move {
+///     for i in 0..5 {
+///         let job = format!("Job {}", i);
+///         let _ = tx.send(job).await;
+///     }
+/// }).detach();
+/// ```
 #[derive(Debug, Default)]
 pub struct ThreadPoolMonitor {
     total_operations: Mutex<u64>,
@@ -15,13 +83,43 @@ pub struct ThreadPoolMonitor {
 }
 
 impl ThreadPoolMonitor {
-    /// Create a new monitor.
+    /// Create a new thread pool monitor.
+    ///
+    /// Initializes all counters to zero and prepares the monitor for tracking
+    /// thread pool performance metrics.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::parallel::ThreadPoolMonitor;
+    ///
+    /// let monitor = ThreadPoolMonitor::new();
+    /// ```
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Record the start of an operation.
+    /// Record the start of an operation and return a timer.
+    ///
+    /// This method increments the active operations counter and returns an
+    /// `OperationTimer` that will automatically record the operation's
+    /// completion when dropped.
+    ///
+    /// # Returns
+    ///
+    /// An `OperationTimer` that tracks the operation duration.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::parallel::ThreadPoolMonitor;
+    ///
+    /// let monitor = ThreadPoolMonitor::new();
+    /// let timer = monitor.start_operation();
+    /// // ... perform operation ...
+    /// drop(timer); // Records completion
+    /// ```
     pub fn start_operation(&self) -> OperationTimer<'_> {
         *self.active_operations.lock() += 1;
         OperationTimer {
@@ -30,7 +128,24 @@ impl ThreadPoolMonitor {
         }
     }
 
-    /// Get current statistics.
+    /// Get current performance statistics.
+    ///
+    /// Returns a snapshot of current thread pool performance metrics
+    /// including operation counts, timing, and averages.
+    ///
+    /// # Returns
+    ///
+    /// Current `ThreadPoolStats` containing performance metrics.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::parallel::ThreadPoolMonitor;
+    ///
+    /// let monitor = ThreadPoolMonitor::new();
+    /// let stats = monitor.stats();
+    /// println!("Total operations: {}", stats.total_operations);
+    /// ```
     pub fn stats(&self) -> ThreadPoolStats {
         let total_ops = *self.total_operations.lock();
         let total_time = self.total_time.lock().as_secs();
@@ -50,6 +165,22 @@ impl ThreadPoolMonitor {
 }
 
 /// Timer for measuring operation duration.
+///
+/// Automatically tracks the duration of an operation from creation to drop.
+/// When dropped, it updates the associated monitor's statistics.
+///
+/// # Examples
+///
+/// ```rust
+/// use trash_utilities::parallel::ThreadPoolMonitor;
+///
+/// let monitor = ThreadPoolMonitor::new();
+/// {
+///     let _timer = monitor.start_operation();
+///     // Operation work here
+///     std::thread::sleep(std::time::Duration::from_millis(10));
+/// } // Timer automatically records completion here
+/// ```
 pub struct OperationTimer<'a> {
     start: Instant,
     monitor: &'a ThreadPoolMonitor,
@@ -65,6 +196,30 @@ impl Drop for OperationTimer<'_> {
 }
 
 /// Statistics for thread pool performance.
+///
+/// Contains aggregated performance metrics for thread pool operations,
+/// including timing information and operation counts.
+///
+/// # Fields
+///
+/// * `total_operations` - Total number of completed operations
+/// * `total_time` - Total time spent on all operations (in seconds)
+/// * `average_time` - Average time per operation (in seconds), or None if no operations
+/// * `active_operations` - Number of currently active operations
+///
+/// # Examples
+///
+/// ```rust
+/// use trash_utilities::parallel::{ThreadPoolMonitor, ThreadPoolStats};
+///
+/// let monitor = ThreadPoolMonitor::new();
+/// let stats: ThreadPoolStats = monitor.stats();
+///
+/// println!("Completed {} operations", stats.total_operations);
+/// if let Some(avg) = stats.average_time {
+///     println!("Average time: {} seconds", avg);
+/// }
+/// ```
 #[derive(Debug, Clone)]
 pub struct ThreadPoolStats {
     /// Total number of operations completed.

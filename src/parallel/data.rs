@@ -1,8 +1,61 @@
 use std::collections::HashMap;
 
-/// Partition elements into two groups based on a predicate in parallel.
+/// Parallel data transformation and organization utilities.
 ///
-/// This function splits a vector into two vectors: one containing elements
+/// This module provides high-level parallel operations for organizing and
+/// transforming data collections. It includes partitioning, grouping, chunking,
+/// and windowing operations that are commonly needed in data processing pipelines.
+///
+/// ## Features
+///
+/// - **Parallel Partitioning**: Split data into matching/non-matching groups
+/// - **Parallel Grouping**: Group elements by computed keys
+/// - **Parallel Chunking**: Divide data into fixed-size chunks
+/// - **Parallel Windows**: Create sliding windows over data
+/// - **Memory Efficient**: Operations designed to minimize memory overhead
+/// - **Composable**: Results can be chained with other parallel operations
+///
+/// ## Examples
+///
+/// ### Partitioning Data
+/// ```rust
+/// use trash_utilities::parallel::parallel_partition;
+///
+/// let data = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+/// let (evens, odds) = parallel_partition(data, |&x| x % 2 == 0);
+///
+/// assert_eq!(evens, vec![2, 4, 6, 8, 10]);
+/// assert_eq!(odds, vec![1, 3, 5, 7, 9]);
+/// ```
+///
+/// ### Grouping by Keys
+/// ```rust
+/// use trash_utilities::parallel::parallel_group_by;
+/// use std::collections::HashMap;
+///
+/// let data = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+/// let groups = parallel_group_by(data, |&x| x % 3);
+///
+/// // Elements grouped by their remainder when divided by 3
+/// assert_eq!(groups.get(&0), Some(&vec![3, 6, 9]));
+/// assert_eq!(groups.get(&1), Some(&vec![1, 4, 7, 10]));
+/// assert_eq!(groups.get(&2), Some(&vec![2, 5, 8]));
+/// ```
+///
+/// ### Chunking for Batch Processing
+/// ```rust
+/// use trash_utilities::parallel::parallel_chunks;
+///
+/// let data = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+/// let chunks = parallel_chunks(data, 3);
+///
+/// assert_eq!(chunks, vec![
+///     vec![1, 2, 3],
+///     vec![4, 5, 6],
+///     vec![7, 8, 9],
+///     vec![10]  // Last chunk may be smaller
+/// ]);
+/// ```/// This function splits a vector into two vectors: one containing elements
 /// that satisfy the predicate, and another containing elements that don't.
 ///
 /// # Type Parameters
