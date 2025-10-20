@@ -60,6 +60,12 @@ pub fn test_serialize_deserialize_timestamp() {
 }
 
 #[test]
+fn test_deserialize_timestamp_invalid() {
+    let result = deserialize_timestamp("invalid json");
+    assert!(result.is_err());
+}
+
+#[test]
 pub fn test_batch_parse_dates() {
     let dates = vec!["2023-01-01", "2023-01-02"];
     let parsed = batch_parse_dates(&dates).unwrap();
@@ -94,9 +100,29 @@ pub fn test_read_env_var_parse() {
 }
 
 #[test]
+fn test_read_env_var_parse_invalid() {
+    unsafe {
+        std::env::set_var("TEST_INVALID", "not_a_number");
+    }
+    let result: Result<u16, Box<dyn std::error::Error>> = read_env_var_parse("TEST_INVALID");
+    assert!(result.is_err());
+    unsafe {
+        std::env::remove_var("TEST_INVALID");
+    }
+}
+
+#[test]
 pub fn test_validate_required_env_vars() {
     let result = validate_required_env_vars(&["PATH"]); // PATH should exist
     assert!(result.is_ok());
+}
+
+#[test]
+pub fn test_validate_required_env_vars_missing() {
+    let result = validate_required_env_vars(&["NONEXISTENT_VAR_12345"]);
+    assert!(result.is_err());
+    let missing_vars = result.unwrap_err();
+    assert_eq!(missing_vars, vec!["NONEXISTENT_VAR_12345".to_string()]);
 }
 
 #[test]
@@ -144,6 +170,12 @@ pub fn test_get_file_size() {
 }
 
 #[test]
+fn test_get_file_size_nonexistent() {
+    let result = get_file_size("nonexistent_file_12345.txt");
+    assert!(result.is_err());
+}
+
+#[test]
 pub fn test_create_temp_file() {
     let temp = create_temp_file().unwrap();
     let path = temp.path().to_string_lossy().to_string();
@@ -155,6 +187,12 @@ pub fn test_create_temp_file() {
 pub fn test_list_directory() {
     let entries = list_directory(".").unwrap();
     assert!(entries.contains(&"Cargo.toml".to_string()));
+}
+
+#[test]
+fn test_list_directory_nonexistent() {
+    let result = list_directory("nonexistent_directory_12345");
+    assert!(result.is_err());
 }
 
 #[test]
@@ -190,6 +228,19 @@ pub fn test_read_env_var_json() {
 }
 
 #[test]
+fn test_read_env_var_json_invalid() {
+    unsafe {
+        std::env::set_var("TEST_INVALID_JSON", "not json");
+    }
+    let result: Result<serde_json::Value, Box<dyn std::error::Error>> =
+        read_env_var_json("TEST_INVALID_JSON");
+    assert!(result.is_err());
+    unsafe {
+        std::env::remove_var("TEST_INVALID_JSON");
+    }
+}
+
+#[test]
 pub fn test_read_env_vars_parallel() {
     unsafe {
         std::env::set_var("TEST_VAR1", "value1");
@@ -214,10 +265,28 @@ pub fn test_get_file_metadata() {
 }
 
 #[test]
+fn test_get_file_metadata_nonexistent() {
+    let result = get_file_metadata("nonexistent_file_12345.txt");
+    assert!(result.is_err());
+}
+
+#[test]
 pub fn test_get_file_modified_time() {
     let modified = get_file_modified_time("Cargo.toml").unwrap();
     // Just check it's a valid SystemTime, not in the future
-    assert!(modified.duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() > 0);
+    assert!(
+        modified
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs()
+            > 0
+    );
+}
+
+#[test]
+#[should_panic(expected = "called `Result::unwrap()` on an `Err` value")]
+fn test_get_file_modified_time_nonexistent() {
+    let _ = get_file_modified_time("nonexistent_file_12345.txt").unwrap();
 }
 
 #[test]
@@ -255,11 +324,23 @@ pub fn test_walk_directory() {
 }
 
 #[test]
+#[should_panic(expected = "called `Result::unwrap()` on an `Err` value")]
+fn test_walk_directory_nonexistent() {
+    let _ = walk_directory("nonexistent_directory_12345").unwrap();
+}
+
+#[test]
 #[allow(clippy::case_sensitive_file_extension_comparisons)]
 pub fn test_find_files_parallel() {
     let rs_files = find_files_parallel("src", "rs").unwrap();
     assert!(!rs_files.is_empty());
     assert!(rs_files.iter().all(|f| f.ends_with(".rs")));
+}
+
+#[test]
+#[should_panic(expected = "called `Result::unwrap()` on an `Err` value")]
+fn test_find_files_parallel_nonexistent() {
+    let _ = find_files_parallel("nonexistent_directory_12345", "rs").unwrap();
 }
 
 #[test]
@@ -270,11 +351,14 @@ pub fn test_sys() {
     test_parse_datetime();
     test_parse_date();
     test_serialize_deserialize_timestamp();
+    test_deserialize_timestamp_invalid();
     test_batch_parse_dates();
     test_convert_timezone_offset();
     test_read_env_var_or();
     test_read_env_var_parse();
+    test_read_env_var_parse_invalid();
     test_validate_required_env_vars();
+    test_validate_required_env_vars_missing();
     test_normalize_path();
     test_join_paths();
     test_get_file_extension();
@@ -282,17 +366,24 @@ pub fn test_sys() {
     test_is_file();
     test_is_directory();
     test_get_file_size();
+    test_get_file_size_nonexistent();
     test_create_temp_file();
     test_list_directory();
+    test_list_directory_nonexistent();
     test_timer_elapsed();
     test_read_env_var();
     test_read_env_var_json();
+    test_read_env_var_json_invalid();
     test_read_env_vars_parallel();
     test_get_file_metadata();
+    test_get_file_metadata_nonexistent();
     test_get_file_modified_time();
+    test_get_file_modified_time_nonexistent();
     test_get_files_metadata_parallel();
     test_serialize_file_info();
     test_deserialize_file_info();
     test_walk_directory();
+    test_walk_directory_nonexistent();
     test_find_files_parallel();
+    test_find_files_parallel_nonexistent();
 }

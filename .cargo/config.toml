@@ -3,5 +3,8 @@
     c = "llvm-cov nextest --no-fail-fast --config-file .cargo/nextest.toml --html --output-dir coverage --no-cfg-coverage"
     l = "llvm-cov nextest --no-fail-fast --config-file .cargo/nextest.toml --lcov --output-path lcov.info --no-cfg-coverage"
 
+[env]
+    RUST_BACKTRACE = "full"
+
 [build]
     rustdocflags = ["--default-theme", "trash", "--theme", "doc/trash.css"]
