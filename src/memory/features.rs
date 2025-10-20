@@ -2,6 +2,81 @@
 ///
 /// This module provides specialized memory operations including
 /// compression, encryption, parallel processing, and memory-mapped I/O.
+///
+/// ## Features
+///
+/// - **Compressed Memory Pools**: Space-efficient storage with Brotli compression
+/// - **Secure Memory Pools**: Encrypted memory with automatic secure wiping
+/// - **Memory-Mapped Pools**: Large data handling with file-backed storage
+/// - **Parallel Processing**: Concurrent memory operations using thread pools
+/// - **RAII Guards**: Automatic cleanup for compressed and secure allocations
+///
+/// ## Examples
+///
+/// ### Compressed Memory Pool
+/// ```rust
+/// use trash_utilities::memory::*;
+///
+/// // Create a compressed pool
+/// let config = default_pool_config("compressed");
+/// let pool = CompressedMemoryPool::new(config, 6); // Compression level 6
+///
+/// // Allocate and compress data
+/// let data = b"Hello, this is some data that will be compressed!";
+/// let allocation = pool.allocate_compressed(data).unwrap();
+///
+/// // Check compression ratio
+/// println!("Compression ratio: {:.2}", allocation.compression_ratio());
+/// println!("Original size: {} bytes", allocation.original_size());
+/// println!("Compressed size: {} bytes", allocation.compressed_size());
+///
+/// // Decompress and get original data
+/// let decompressed = allocation.decompress().unwrap();
+/// assert_eq!(decompressed, data);
+/// ```
+///
+/// ### Secure Memory Pool
+/// ```rust
+/// use trash_utilities::memory::*;
+///
+/// // Create a secure pool with encryption
+/// let config = default_pool_config("secure");
+/// let key = b"my-secret-key-32-bytes-long!!!"; // 32 bytes for AES-256
+/// let pool = SecureMemoryPool::new(config, Some(key.to_vec()));
+///
+/// // Allocate and encrypt sensitive data
+/// let sensitive_data = b"This is sensitive information";
+/// let allocation = pool.allocate_encrypted(sensitive_data).unwrap();
+///
+/// // Decrypt and verify
+/// let decrypted = allocation.decrypt(key).unwrap();
+/// assert_eq!(decrypted, sensitive_data);
+///
+/// // Data is automatically wiped when allocation goes out of scope
+/// drop(allocation);
+/// ```
+///
+/// ### Parallel Memory Processing
+/// ```rust
+/// use trash_utilities::memory::*;
+///
+/// let processor = ParallelMemoryProcessor::new(4);
+///
+/// // Compress multiple blocks in parallel
+/// let blocks = vec![
+///     b"Block 1 data".to_vec(),
+///     b"Block 2 data".to_vec(),
+///     b"Block 3 data".to_vec(),
+/// ];
+///
+/// let compressed = processor.compress_blocks(blocks, 6);
+/// for result in compressed {
+///     let compressed_data = result.unwrap();
+///     println!("Compressed {} bytes", compressed_data.len());
+/// }
+/// ```
+
+/// ```
 // Standard library imports
 use std::{
     io::{Read, Write},
@@ -17,8 +92,6 @@ use tempfile::NamedTempFile;
 
 // Local imports
 use super::{MemoryPool, MemoryPoolConfig, MemoryStats};
-
-/// Compressed memory pool for space-efficient storage
 #[derive(Debug)]
 pub struct CompressedMemoryPool {
     pool: MemoryPool,

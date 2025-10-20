@@ -3,6 +3,76 @@
 /// This module provides the fundamental memory allocation components
 /// including memory pools, arenas, and thread-local caches for efficient
 /// memory management.
+///
+/// ## Features
+///
+/// - **Memory Pools**: Efficient allocation with size limits and statistics
+/// - **Memory Arenas**: Bulk allocation with fast reset capabilities
+/// - **Thread-Local Caches**: Per-thread object caching for performance
+/// - **Statistics Tracking**: Detailed allocation/deallocation metrics
+/// - **Safety Guards**: Automatic cleanup and bounds checking
+///
+/// ## Examples
+///
+/// ### Memory Pool Usage
+/// ```rust
+/// use trash_utilities::memory::*;
+///
+/// // Create a memory pool configuration
+/// let config = MemoryPoolConfig {
+///     initial_size: 1024 * 1024,         // 1MB
+///     max_size: Some(10 * 1024 * 1024),  // 10MB limit
+///     alignment: 8,
+///     name: "my_pool".to_string(),
+/// };
+///
+/// let pool = MemoryPool::new(config);
+///
+/// // Allocate memory
+/// let ptr = pool.allocate(1024).unwrap();
+/// // ... use the memory ...
+///
+/// // Deallocate when done
+/// pool.deallocate(ptr, 1024).unwrap();
+///
+/// // Check statistics
+/// let stats = pool.stats();
+/// println!("Allocated: {} bytes", stats.allocated_bytes);
+/// ```
+///
+/// ### Memory Arena for Bulk Operations
+/// ```rust
+/// use trash_utilities::memory::*;
+///
+/// let mut arena = MemoryArena::new(64 * 1024, "bulk_ops".to_string()); // 64KB
+///
+/// // Allocate multiple items quickly
+/// let data1 = arena.allocate(1024).unwrap();
+/// let data2 = arena.allocate(2048).unwrap();
+///
+/// // Use the data...
+///
+/// // Reset arena for reuse (much faster than individual deallocations)
+/// arena.reset();
+/// println!("Arena usage: {} bytes", arena.usage());
+/// ```
+///
+/// ### Thread-Local Cache
+/// ```rust
+/// use trash_utilities::memory::*;
+///
+/// let cache = ThreadLocalCache::new(10, || Vec::new());
+///
+/// // Get a vector from cache or create new
+/// let mut vec = cache.get_or_create();
+/// vec.push(42);
+///
+/// // Return to cache for reuse
+/// cache.return_item(vec);
+///
+/// println!("Cache size: {}", cache.size());
+/// ```
+
 // Standard library imports
 use std::{
     alloc::{Layout, dealloc},

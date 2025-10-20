@@ -3,6 +3,79 @@
 /// This module provides comprehensive memory statistics tracking,
 /// profiling capabilities, event logging, and snapshot functionality
 /// for debugging and performance analysis.
+///
+/// ## Features
+///
+/// - **Memory Statistics**: Detailed allocation/deallocation metrics
+/// - **Memory Profiling**: Performance analysis with allocation tracking
+/// - **Event Logging**: Timestamped memory operation events
+/// - **Memory Snapshots**: Point-in-time memory state capture
+/// - **Serialization**: JSON/base64 export for debugging
+///
+/// ## Examples
+///
+/// ### Memory Profiling
+/// ```rust
+/// use trash_utilities::memory::*;
+///
+/// let profiler = MemoryProfiler::new();
+/// profiler.start();
+///
+/// // Your memory-intensive operations here
+/// {
+///     let pool = MemoryPool::new(default_pool_config("test"));
+///     let _ptr = pool.allocate(1024).unwrap();
+///     profiler.record_allocation("test_allocation", 1024);
+/// }
+///
+/// profiler.stop();
+///
+/// // Get profiling report
+/// let report = profiler.report();
+/// for (tag, stats) in report {
+///     println!("{}: {} allocations, avg {} bytes", tag, stats.count, stats.avg_size);
+/// }
+/// ```
+///
+/// ### Event Logging
+/// ```rust
+/// use trash_utilities::memory::*;
+///
+/// let logger = MemoryEventLogger::new(1000); // Max 1000 events
+///
+/// // Log memory events
+/// logger.log_event(MemoryEventType::Allocation, 1024, Some("my_pool"), "Allocated buffer");
+/// logger.log_event(MemoryEventType::PoolCreated, 0, Some("my_pool"), "Created new pool");
+///
+/// // Get recent events
+/// let events = logger.recent_events(10);
+/// for event in events {
+///     println!("{}: {} bytes - {}", event.event_type, event.size, event.details);
+/// }
+///
+/// // Export as JSON
+/// let json = logger.export_json().unwrap();
+/// ```
+///
+/// ### Memory Snapshots
+/// ```rust
+/// use trash_utilities::memory::*;
+///
+/// let manager = global_memory_manager();
+/// let _pool = manager.create_pool(&default_pool_config("snapshot_test"));
+///
+/// // Create snapshot
+/// let snapshot = MemorySnapshot::new(&manager);
+///
+/// // Export for debugging
+/// let base64_data = snapshot.export_base64().unwrap();
+/// println!("Snapshot: {}", base64_data);
+///
+/// // Import later for analysis
+/// let imported = MemorySnapshot::import_base64(&base64_data).unwrap();
+/// assert!(imported.verify()); // Check integrity
+/// ```
+
 // Standard library imports
 use std::{hash::Hasher, time::Instant};
 

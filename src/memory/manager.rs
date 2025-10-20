@@ -2,6 +2,76 @@
 ///
 /// This module provides memory managers, global state management,
 /// and utilities for coordinating memory operations across the system.
+///
+/// ## Features
+///
+/// - **Global Memory Manager**: Centralized memory pool management
+/// - **Enhanced Memory Manager**: Advanced features with compression and encryption
+/// - **Memory Monitoring**: Background monitoring with configurable intervals
+/// - **Pool Coordination**: Unified interface for different pool types
+/// - **Statistics Aggregation**: Global memory usage reporting
+///
+/// ## Examples
+///
+/// ### Basic Memory Manager
+/// ```rust
+/// use trash_utilities::memory::*;
+///
+/// // Create a global memory manager
+/// let manager = global_memory_manager();
+///
+/// // Create a memory pool
+/// let config = default_pool_config("my_pool");
+/// let pool = manager.create_pool(&config);
+///
+/// // Use the pool for allocations
+/// let ptr = pool.allocate(1024).unwrap();
+/// // ... use the memory ...
+/// pool.deallocate(ptr, 1024).unwrap();
+///
+/// // Get global statistics
+/// let stats = manager.global_stats();
+/// println!("Total allocated: {} bytes", stats.allocated_bytes);
+/// ```
+///
+/// ### Enhanced Memory Manager
+/// ```rust
+/// use trash_utilities::memory::*;
+///
+/// // Create enhanced manager with all features
+/// let manager = EnhancedMemoryManager::new(4);
+///
+/// // Create different types of pools
+/// let compressed_pool = manager.create_compressed_pool(
+///     &default_pool_config("compressed"),
+///     6 // compression level
+/// );
+///
+/// let secure_pool = manager.create_secure_pool(
+///     &default_pool_config("secure"),
+///     Some(b"encryption-key".to_vec())
+/// );
+///
+/// // Create memory snapshot for debugging
+/// let snapshot = manager.create_snapshot();
+/// ```
+///
+/// ### Memory Monitoring
+/// ```rust,no_run
+/// use trash_utilities::memory::*;
+/// use std::time::Duration;
+///
+/// // Initialize memory management with monitoring
+/// init_memory_management(Some(Duration::from_secs(30)));
+///
+/// // Memory usage will be monitored in the background
+/// // Get reports anytime
+/// let manager = global_memory_manager();
+/// let report = manager.memory_report();
+/// println!("{}", report);
+/// ```
+
+/// ```
 // Standard library imports
 use std::{fmt::Write, sync::Arc, thread::spawn, time::Duration};
 
@@ -10,7 +80,8 @@ use ahash::AHashMap;
 use parking_lot::{Mutex, RwLock};
 
 // Local imports
-use super::{
+/// ```
+// Standard library imports
     CompressedMemoryPool, MemoryEventLogger, MemoryEventType, MemoryPool, MemoryPoolConfig,
     MemorySnapshot, MemoryStats, ParallelMemoryProcessor, SecureMemoryPool, calc_ratio,
     get_mimalloc_stats,
