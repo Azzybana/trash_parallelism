@@ -591,7 +591,10 @@ pub fn test_memory_event_logger_different_types() {
 
     // Check different types
     assert!(matches!(events[0].event_type, MemoryEventType::Allocation));
-    assert!(matches!(events[1].event_type, MemoryEventType::Deallocation));
+    assert!(matches!(
+        events[1].event_type,
+        MemoryEventType::Deallocation
+    ));
     assert!(matches!(events[2].event_type, MemoryEventType::PoolCreated));
     assert!(matches!(events[3].event_type, MemoryEventType::Compression));
     assert!(matches!(events[4].event_type, MemoryEventType::Encryption));
