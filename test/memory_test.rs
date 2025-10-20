@@ -546,6 +546,116 @@ pub fn test_memory_report_output() {
 }
 
 #[test]
+pub fn test_memory_profiler_multiple_tags() {
+    let profiler = MemoryProfiler::new();
+    profiler.start();
+
+    profiler.record_allocation("tag1", 100);
+    profiler.record_allocation("tag1", 200);
+    profiler.record_allocation("tag2", 300);
+    profiler.record_allocation("tag2", 400);
+    profiler.record_allocation("tag3", 500);
+
+    let report = profiler.report();
+    assert_eq!(report.len(), 3);
+
+    let tag1_stats = report.get("tag1").unwrap();
+    assert_eq!(tag1_stats.count, 2);
+    assert_eq!(tag1_stats.total_size, 300);
+
+    let tag2_stats = report.get("tag2").unwrap();
+    assert_eq!(tag2_stats.count, 2);
+    assert_eq!(tag2_stats.total_size, 700);
+
+    let tag3_stats = report.get("tag3").unwrap();
+    assert_eq!(tag3_stats.count, 1);
+    assert_eq!(tag3_stats.total_size, 500);
+
+    profiler.stop();
+}
+
+#[test]
+pub fn test_memory_event_logger_different_types() {
+    let logger = MemoryEventLogger::new(10);
+
+    logger.log_event(MemoryEventType::Allocation, 1024, Some("pool1"), "Alloc");
+    logger.log_event(MemoryEventType::Deallocation, 512, Some("pool1"), "Dealloc");
+    logger.log_event(MemoryEventType::PoolCreated, 0, Some("pool2"), "Created");
+    logger.log_event(MemoryEventType::Compression, 256, None, "Compressed");
+    logger.log_event(MemoryEventType::Encryption, 128, None, "Encrypted");
+
+    assert_eq!(logger.len(), 5);
+
+    let events = logger.recent_events(10);
+    assert_eq!(events.len(), 5);
+
+    // Check different types
+    assert!(matches!(events[0].event_type, MemoryEventType::Allocation));
+    assert!(matches!(events[1].event_type, MemoryEventType::Deallocation));
+    assert!(matches!(events[2].event_type, MemoryEventType::PoolCreated));
+    assert!(matches!(events[3].event_type, MemoryEventType::Compression));
+    assert!(matches!(events[4].event_type, MemoryEventType::Encryption));
+}
+
+#[test]
+pub fn test_memory_snapshot_with_pools() {
+    let manager = MemoryManager::new();
+    let config1 = default_pool_config("pool1");
+    let config2 = default_pool_config("pool2");
+    let _pool1 = manager.create_pool(&config1);
+    let _pool2 = manager.create_pool(&config2);
+
+    let snapshot = MemorySnapshot::new(&manager);
+    assert!(snapshot.verify());
+
+    let pools = snapshot.pools();
+    assert_eq!(pools.len(), 2);
+    assert!(pools.contains_key("pool1"));
+    assert!(pools.contains_key("pool2"));
+}
+
+#[test]
+pub fn test_memory_snapshot_methods() {
+    let manager = MemoryManager::new();
+    let config = default_pool_config("test_pool");
+    let pool = manager.create_pool(&config);
+    // Allocate some memory to have stats
+    let _ptr = pool.allocate(1024).unwrap();
+
+    let snapshot = MemorySnapshot::new(&manager);
+    assert!(snapshot.verify());
+
+    let stats = snapshot.stats();
+    assert!(stats.allocated_bytes >= 1024);
+
+    let pools = snapshot.pools();
+    assert_eq!(pools.len(), 1);
+    let pool_stats = pools.get("test_pool").unwrap();
+    assert!(pool_stats.allocated_bytes >= 1024);
+}
+
+#[test]
+pub fn test_memory_profiler_rate_calculation() {
+    let profiler = MemoryProfiler::new();
+    profiler.start();
+
+    profiler.record_allocation("test", 100);
+    std::thread::sleep(Duration::from_millis(10));
+    profiler.record_allocation("test", 200);
+    std::thread::sleep(Duration::from_millis(10));
+    profiler.record_allocation("test", 300);
+
+    let report = profiler.report();
+    let stats = report.get("test").unwrap();
+    assert_eq!(stats.count, 3);
+    assert_eq!(stats.total_size, 600);
+    // Rate should be positive since time passed
+    assert!(stats.rate > 0.0);
+
+    profiler.stop();
+}
+
+#[test]
 pub fn test_memory() {
     test_calc_ratio();
     test_get_mimalloc_stats();
