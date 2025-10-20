@@ -18,7 +18,6 @@
         "development-tools::debugging",
         "memory-management"
     ]
-    publish = false
 
 [lib]
     name = "trash_parallelism"
