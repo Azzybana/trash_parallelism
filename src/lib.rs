@@ -61,6 +61,8 @@
 //! - `spawn_task!`, `parallel_map!`, `alloc_from_pool!` from macros
 //! - `current_utc_time`, `read_env_var` from sys
 //! - `parallel_map`, `parallel_for_each` from threads
+#![doc(html_logo_url = "https://avatars.githubusercontent.com/u/121582001?v=4&size=64")]
+#![doc(html_playground_url = "https://play.rust-lang.org/")]
 
 /// The dynamic version of the crate, computed from commit count during build.
 pub const VERSION: &str = env!("DYNAMIC_VERSION");

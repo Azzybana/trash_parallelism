@@ -1,5 +1,6 @@
 [package]
     name = "trash_parallels"
+    # Version patch is set dynamically by build.rs based on Git commit count
     version = "0.1.0"
     edition = "2024"
     resolver = "3"
@@ -8,19 +9,13 @@
     authors = ["Azzybana Raccoon"]
     license = "Apache-2.0"
     readme = "README.md"
-    keywords = [
-        "async",
-        "futures",
-        "logging",
-        "memory",
-        "utility",
-    ]
+    keywords = ["async", "futures", "logging", "memory", "utility"]
     categories = [
         "asynchronous",
         "concurrency",
         "development-tools",
         "development-tools::debugging",
-        "memory-management",
+        "memory-management"
     ]
     publish = false
 
@@ -33,9 +28,7 @@
 
     # Async
     crossfire = { version = "2.1.6", features = ["smol"] }
-    parking_lot = { version = "0.12.5", features = [
-        "serde",
-    ] }
+    parking_lot = { version = "0.12.5", features = ["serde"] }
     smol = "2.0.2"
     smol-cancellation-token = "0.1.0"
     futures-lite = "2.6.1"
@@ -43,29 +36,20 @@
     # Serialization
     serde = { version = "1.0.228", features = ["derive"] }
     serde_json = { version = "1.0.145" }
-    schemars = { version = "1.0.4", features = [
-        "bytes1",
-        "chrono04",
-    ] }
+    schemars = { version = "1.0.4", features = ["bytes1", "chrono04"] }
 
     # Performance
     memchr = { version = "2.7.6", features = ["use_std"] }
     bytes = { version = "1.10.1", features = ["serde"] }
     ahash = { version = "0.8.12", features = ["serde"] }
-    mimalloc = { version = "0.1.48", features = [
-        "extended",
-        "v3",
-    ] }
+    mimalloc = { version = "0.1.48", features = ["extended", "v3"] }
 
     # Utilities
     chrono = { version = "0.4.42", features = ["serde"] }
     base64 = { version = "0.22.1" }
     tempfile = { version = "3.23.0" }
     fork_union = { version = "2.3.0" }
-    brotli = { version = "8.0.2", features = [
-        "simd",
-        "vector_scratch_space",
-    ] }
+    brotli = { version = "8.0.2", features = ["simd", "vector_scratch_space"] }
     arc-swap = { version = "1.7.1", features = ["serde"] }
     once_cell = "1.21.3"
 
@@ -76,3 +60,13 @@
     complexity = "warn"
     perf = "warn"
     pedantic = "warn"
+
+[profile.dev]
+    opt-level = 1
+
+[profile.release]
+    opt-level = 3
+    strip = "symbols"
+    lto = "fat"
+    panic = 'abort'
+    codegen-units = 1
