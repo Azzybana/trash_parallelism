@@ -291,7 +291,10 @@ impl StreamingFileWriter {
             data.to_vec()
         };
 
+        // Write the chunk immediately and flush to ensure data is visible
+        // to subsequent reads before the file is closed.
         self.file.write_all(&data_to_write).await?;
+        self.file.flush().await?;
         self.bytes_written += data_to_write.len() as u64;
         Ok(())
     }
