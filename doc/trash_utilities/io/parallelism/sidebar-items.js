@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["batch_file_operations","parallel_filter","parallel_map","process_files_chunked","process_files_parallel","traverse_and_process"]};

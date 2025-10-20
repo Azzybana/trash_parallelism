@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["VERSION"],"mod":["async","channels","chars","common","data","io","memory","parallel","serde","sys"]};

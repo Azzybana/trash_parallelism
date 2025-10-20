@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["execute","parallel_filter","parallel_fold","parallel_for_each","parallel_map"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["parallel_chunks","parallel_group_by","parallel_partition","parallel_windows"]};

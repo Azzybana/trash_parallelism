@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["benchmark_channel","bounded_queue_3","broadcast_message","create_bounded_channel","create_unbounded_channel","recv_async","recv_json_message","send_async","send_json_message"],"struct":["JsonMessage","Message"],"type":["RxFuture","TxFuture"]};

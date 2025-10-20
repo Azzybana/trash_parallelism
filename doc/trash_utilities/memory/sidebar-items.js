@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["allocate_aligned","calc_ratio","deallocate_aligned","get_mimalloc_stats"],"mod":["features","manager","pool","stats"],"struct":["MemoryAllocationGuard","MemoryPoolConfig","MemoryUsageGuard"]};

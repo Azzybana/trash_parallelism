@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["default_pool_config","global_memory_manager","high_perf_pool_config","init_memory_management"],"struct":["EnhancedMemoryManager","MemoryManager"]};

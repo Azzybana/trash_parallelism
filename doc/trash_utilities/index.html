@@ -1,0 +1,59 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Trash Utilities"><title>trash_utilities - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-ca0dd0c4.css"><script id="default-settings" 
+data-use_system_theme="false"
+data-theme="trash"></script><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="trash_utilities" data-themes="trash" data-resource-suffix="" data-rustdoc-version="1.92.0-nightly (b925a865e 2025-10-09)" data-channel="nightly" data-search-js="search-8d3311b9.js" data-stringdex-js="stringdex-828709d0.js" data-settings-js="settings-c38705f0.js" ><script src="../static.files/storage-e2aeef58.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-ce535bd0.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate trash_utilities</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><a class="logo-container" href="../trash_utilities/index.html"><img src="https://avatars.githubusercontent.com/u/121582001?v=4&#38;size=64" alt="logo"></a><h2><a href="../trash_utilities/index.html">trash_<wbr>utilities</a><span class="version">0.1.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#trash-utilities" title="Trash Utilities">Trash Utilities</a><ul><li><a href="#features" title="Features">Features</a></li><li><a href="#quick-start" title="Quick Start">Quick Start</a></li><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#re-exports" title="Re-exports">Re-exports</a></li></ul></li></ul><h3><a href="#reexports">Crate Items</a></h3><ul class="block"><li><a href="#reexports" title="Re-exports">Re-exports</a></li><li><a href="#modules-1" title="Modules">Modules</a></li><li><a href="#constants" title="Constants">Constants</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>trash_<wbr>utilities</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/trash_utilities/lib.rs.html#1-83">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="trash-utilities"><a class="doc-anchor" href="#trash-utilities">§</a>Trash Utilities</h2>
+<p>A high-performance Rust library providing comprehensive async, threading,
+memory management, and utility functions for building efficient applications.</p>
+<h3 id="features"><a class="doc-anchor" href="#features">§</a>Features</h3>
+<ul>
+<li><strong>Async Operations</strong>: High-performance async utilities with smol, futures-lite, and crossfire</li>
+<li><strong>Threading</strong>: Parallel processing with <code>fork_union</code> and work-stealing schedulers</li>
+<li><strong>Memory Management</strong>: Efficient allocation with mimalloc and custom memory pools</li>
+<li><strong>Channels</strong>: Advanced channel communication with monitoring and serialization</li>
+<li><strong>System Utilities</strong>: Time handling, environment variables, file system operations</li>
+<li><strong>Data Processing</strong>: Parsing, serialization, and data manipulation</li>
+<li><strong>I/O Operations</strong>: File and network I/O with async support</li>
+<li><strong>Logging</strong>: Structured logging</li>
+<li><strong>Utilities</strong>: Compression, hashing, JSON handling, and more</li>
+</ul>
+<h3 id="quick-start"><a class="doc-anchor" href="#quick-start">§</a>Quick Start</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>trash_utilities::<span class="kw-2">*</span>;
+
+<span class="comment">// Spawn an async task
+</span><span class="macro">spawn_task!</span>(<span class="string">"my_task"</span>, <span class="kw">async </span>{
+    <span class="macro">println!</span>(<span class="string">"Hello from async task!"</span>);
+    <span class="prelude-val">Ok</span>(())
+});
+
+<span class="comment">// Parallel processing
+</span><span class="kw">let </span>data = <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>];
+<span class="kw">let </span>result = parallel_map(data, |x| x * <span class="number">2</span>);
+
+<span class="comment">// Memory operations
+</span><span class="kw">let </span>ptr = <span class="macro">alloc_from_pool!</span>(<span class="string">"default"</span>, <span class="number">1024</span>);
+
+<span class="comment">// System utilities
+</span><span class="kw">let </span>now = current_utc_time();
+<span class="kw">let </span>home = read_env_var(<span class="string">"HOME"</span>).unwrap_or_default();</code></pre><a class="test-arrow" target="_blank" title="Run code" href="https://play.rust-lang.org/?code=%23!%5Ballow(unused)%5D%0A%23%5Ballow(unused_extern_crates)%5D%0Aextern+crate+r%23trash_utilities;%0Afn+main()+%7B%0A++++use+trash_utilities::*;%0A++++%0A++++//+Spawn+an+async+task%0A++++spawn_task!(%22my_task%22,+async+%7B%0A++++++++println!(%22Hello+from+async+task!%22);%0A++++++++Ok(())%0A++++%7D);%0A++++%0A++++//+Parallel+processing%0A++++let+data+=+vec!%5B1,+2,+3,+4,+5%5D;%0A++++let+result+=+parallel_map(data,+%7Cx%7C+x+*+2);%0A++++%0A++++//+Memory+operations%0A++++let+ptr+=+alloc_from_pool!(%22default%22,+1024);%0A++++%0A++++//+System+utilities%0A++++let+now+=+current_utc_time();%0A++++let+home+=+read_env_var(%22HOME%22).unwrap_or_default();%0A%7D&amp;edition=2024"></a></div><h3 id="modules"><a class="doc-anchor" href="#modules">§</a>Modules</h3>
+<ul>
+<li><code>async</code>: Comprehensive async utilities</li>
+<li><code>channels</code>: Advanced channel communication</li>
+<li><code>chars</code>: Character and string processing</li>
+<li><code>common</code>: Shared utility functions</li>
+<li><code>data</code>: Data parsing and serialization</li>
+<li><code>io</code>: I/O operations</li>
+<li><code>logging</code>: Structured logging</li>
+<li><code>macros</code>: Ergonomic macros</li>
+<li><code>memory</code>: Memory management and pools</li>
+<li><code>serde</code>: Serialization utilities</li>
+<li><code>sys</code>: System utilities</li>
+<li><code>parallel</code>: Threading and parallelism</li>
+<li><code>utils</code>: Additional utilities</li>
+</ul>
+<h3 id="re-exports"><a class="doc-anchor" href="#re-exports">§</a>Re-exports</h3>
+<p>Key functions and types are re-exported at the crate root for convenience:</p>
+<ul>
+<li><code>spawn_task!</code>, <code>parallel_map!</code>, <code>alloc_from_pool!</code> from macros</li>
+<li><code>current_utc_time</code>, <code>read_env_var</code> from sys</li>
+<li><code>parallel_map</code>, <code>parallel_for_each</code> from threads</li>
+</ul>
+</div></details><h2 id="reexports" class="section-header">Re-exports<a href="#reexports" class="anchor">§</a></h2><dl class="item-table reexports"><dt id="reexport.parallel_for_each"><code>pub use parallel::<a class="fn" href="parallel/core/fn.parallel_for_each.html" title="fn trash_utilities::parallel::core::parallel_for_each">parallel_for_each</a>;</code></dt><dt id="reexport.parallel_map"><code>pub use parallel::<a class="fn" href="parallel/core/fn.parallel_map.html" title="fn trash_utilities::parallel::core::parallel_map">parallel_map</a>;</code></dt><dt id="reexport.current_utc_time"><code>pub use sys::<a class="fn" href="sys/datetime/fn.current_utc_time.html" title="fn trash_utilities::sys::datetime::current_utc_time">current_utc_time</a>;</code></dt><dt id="reexport.read_env_var"><code>pub use sys::<a class="fn" href="sys/env/fn.read_env_var.html" title="fn trash_utilities::sys::env::read_env_var">read_env_var</a>;</code></dt></dl><h2 id="modules-1" class="section-header">Modules<a href="#modules-1" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="async/index.html" title="mod trash_utilities::async">async</a></dt><dt><a class="mod" href="channels/index.html" title="mod trash_utilities::channels">channels</a></dt><dt><a class="mod" href="chars/index.html" title="mod trash_utilities::chars">chars</a></dt><dt><a class="mod" href="common/index.html" title="mod trash_utilities::common">common</a></dt><dt><a class="mod" href="data/index.html" title="mod trash_utilities::data">data</a></dt><dd>Data processing utilities for parsing, encoding, and serialization.</dd><dt><a class="mod" href="io/index.html" title="mod trash_utilities::io">io</a></dt><dd>I/O utilities for asynchronous file operations, channels, compression, and caching.</dd><dt><a class="mod" href="memory/index.html" title="mod trash_utilities::memory">memory</a></dt><dt><a class="mod" href="parallel/index.html" title="mod trash_utilities::parallel">parallel</a></dt><dd>Parallel Processing Utilities</dd><dt><a class="mod" href="serde/index.html" title="mod trash_utilities::serde">serde</a></dt><dd>Serialization Utilities</dd><dt><a class="mod" href="sys/index.html" title="mod trash_utilities::sys">sys</a></dt></dl><h2 id="constants" class="section-header">Constants<a href="#constants" class="anchor">§</a></h2><dl class="item-table"><dt><a class="constant" href="constant.VERSION.html" title="constant trash_utilities::VERSION">VERSION</a></dt><dd>The dynamic version of the crate, computed from commit count during build.</dd></dl></section></div></main></body></html>

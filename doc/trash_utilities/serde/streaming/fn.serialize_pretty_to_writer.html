@@ -1,0 +1,40 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Serialize a value to pretty-printed JSON and write it to a writer."><title>serialize_pretty_to_writer in trash_utilities::serde::streaming - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-ca0dd0c4.css"><script id="default-settings" 
+data-use_system_theme="false"
+data-theme="trash"></script><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="trash_utilities" data-themes="trash" data-resource-suffix="" data-rustdoc-version="1.92.0-nightly (b925a865e 2025-10-09)" data-channel="nightly" data-search-js="search-8d3311b9.js" data-stringdex-js="stringdex-828709d0.js" data-settings-js="settings-c38705f0.js" ><script src="../../../static.files/storage-e2aeef58.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../../static.files/main-ce535bd0.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc fn"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">serialize_pretty_to_writer</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><a class="logo-container" href="../../../trash_utilities/index.html"><img src="https://avatars.githubusercontent.com/u/121582001?v=4&#38;size=64" alt="logo"></a><h2><a href="../../../trash_utilities/index.html">trash_<wbr>utilities</a><span class="version">0.1.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">serialize_<wbr>pretty_<wbr>to_<wbr>writer</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#type-parameters" title="Type Parameters">Type Parameters</a></li><li><a href="#parameters" title="Parameters">Parameters</a></li><li><a href="#returns" title="Returns">Returns</a></li><li><a href="#errors" title="Errors">Errors</a></li><li><a href="#examples" title="Examples">Examples</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In trash_<wbr>utilities::<wbr>serde::<wbr>streaming</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../index.html">trash_utilities</a>::<wbr><a href="../index.html">serde</a>::<wbr><a href="index.html">streaming</a></div><h1>Function <span class="fn">serialize_<wbr>pretty_<wbr>to_<wbr>writer</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../src/trash_utilities/serde/streaming.rs.html#125-131">Source</a> </span></div><pre class="rust item-decl"><code>pub fn serialize_pretty_to_writer&lt;W: <a class="trait" href="https://doc.rust-lang.org/nightly/std/io/trait.Write.html" title="trait std::io::Write">Write</a>, T: <a class="trait" href="https://docs.rs/serde_core/1.0.228/serde_core/ser/trait.Serialize.html" title="trait serde_core::ser::Serialize">Serialize</a>&gt;(
+    writer: W,
+    value: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;T</a>,
+) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.unit.html">()</a>, <a class="struct" href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html" title="struct alloc::boxed::Box">Box</a>&lt;dyn <a class="trait" href="https://doc.rust-lang.org/nightly/core/error/trait.Error.html" title="trait core::error::Error">Error</a>&gt;&gt;</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Serialize a value to pretty-printed JSON and write it to a writer.</p>
+<p>Similar to <code>serialize_to_writer</code> but produces formatted JSON with indentation.
+Useful for creating human-readable configuration files or debug output.</p>
+<h2 id="type-parameters"><a class="doc-anchor" href="#type-parameters">§</a>Type Parameters</h2>
+<ul>
+<li><code>T</code>: The type to serialize, must implement <code>Serialize</code>.</li>
+<li><code>W</code>: The writer type, must implement <code>Write</code>.</li>
+</ul>
+<h2 id="parameters"><a class="doc-anchor" href="#parameters">§</a>Parameters</h2>
+<ul>
+<li><code>writer</code>: The writer to output the JSON to.</li>
+<li><code>value</code>: The value to serialize.</li>
+</ul>
+<h2 id="returns"><a class="doc-anchor" href="#returns">§</a>Returns</h2>
+<ul>
+<li><code>Ok(())</code> if serialization and writing succeed.</li>
+<li><code>Err(serde_json::Error)</code> if serialization fails.</li>
+<li><code>Err(std::io::Error)</code> if writing fails.</li>
+</ul>
+<h2 id="errors"><a class="doc-anchor" href="#errors">§</a>Errors</h2>
+<p>Returns <code>serde_json::Error</code> if the value cannot be serialized to JSON, or <code>std::io::Error</code> if writing to the writer fails.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>trash_analyzer::serde::serialize_pretty_to_writer;
+<span class="kw">use </span>serde::Serialize;
+<span class="kw">use </span>std::fs::File;
+
+<span class="attr">#[derive(Serialize)]
+</span><span class="kw">struct </span>Config { settings: Vec&lt;String&gt;, debug: bool }
+
+<span class="kw">let </span>config = Config {
+    settings: <span class="macro">vec!</span>[<span class="string">"option1"</span>.to_string()],
+    debug: <span class="bool-val">true</span>,
+};
+<span class="kw">let </span><span class="kw-2">mut </span>file = File::create(<span class="string">"config.json"</span>).unwrap();
+serialize_pretty_to_writer(<span class="kw-2">&amp;mut </span>file, <span class="kw-2">&amp;</span>config).unwrap();</code></pre><a class="test-arrow" target="_blank" title="Run code" href="https://play.rust-lang.org/?code=%23!%5Ballow(unused)%5D%0Afn+main()+%7B%0A++++use+trash_analyzer::serde::serialize_pretty_to_writer;%0A++++use+serde::Serialize;%0A++++use+std::fs::File;%0A++++%0A++++%23%5Bderive(Serialize)%5D%0A++++struct+Config+%7B+settings:+Vec%3CString%3E,+debug:+bool+%7D%0A++++%0A++++let+config+=+Config+%7B%0A++++++++settings:+vec!%5B%22option1%22.to_string()%5D,%0A++++++++debug:+true,%0A++++%7D;%0A++++let+mut+file+=+File::create(%22config.json%22).unwrap();%0A++++serialize_pretty_to_writer(%26mut+file,+%26config).unwrap();%0A%7D&amp;edition=2024"></a></div></div></details></section></div></main></body></html>

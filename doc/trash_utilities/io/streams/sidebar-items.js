@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["create_channel","process_file_async"],"struct":["AsyncFileProcessor","AsyncFileProcessorBuilder","AsyncStreamUtils","BufferedAsyncReader","ChannelStreamProcessor"]};

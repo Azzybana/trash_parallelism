@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["create_temp_file","deserialize_file_info","find_files_parallel","get_file_extension","get_file_metadata","get_file_metadata_sync","get_file_modified_time","get_file_size","get_file_stem","get_files_metadata_parallel","is_directory","is_file","join_paths","list_directory","normalize_path","serialize_file_info","walk_directory"]};

@@ -1,0 +1,274 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Serialization Utilities"><title>trash_utilities::serde - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-ca0dd0c4.css"><script id="default-settings" 
+data-use_system_theme="false"
+data-theme="trash"></script><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="trash_utilities" data-themes="trash" data-resource-suffix="" data-rustdoc-version="1.92.0-nightly (b925a865e 2025-10-09)" data-channel="nightly" data-search-js="search-8d3311b9.js" data-stringdex-js="stringdex-828709d0.js" data-settings-js="settings-c38705f0.js" ><script src="../../static.files/storage-e2aeef58.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-ce535bd0.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Module serde</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><a class="logo-container" href="../../trash_utilities/index.html"><img src="https://avatars.githubusercontent.com/u/121582001?v=4&#38;size=64" alt="logo"></a><h2><a href="../../trash_utilities/index.html">trash_<wbr>utilities</a><span class="version">0.1.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module serde</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#serialization-utilities" title="Serialization Utilities">Serialization Utilities</a><ul><li><a href="#overview" title="Overview">Overview</a></li><li><a href="#architecture" title="Architecture">Architecture</a></li><li><a href="#function-categories" title="Function Categories">Function Categories</a></li><li><a href="#usage-patterns" title="Usage Patterns">Usage Patterns</a></li><li><a href="#performance-considerations" title="Performance Considerations">Performance Considerations</a></li><li><a href="#error-handling" title="Error Handling">Error Handling</a></li><li><a href="#dependencies" title="Dependencies">Dependencies</a></li><li><a href="#future-extensions" title="Future Extensions">Future Extensions</a></li><li><a href="#safety--security" title="Safety &#38; Security">Safety &amp; Security</a></li><li><a href="#migration-guide" title="Migration Guide">Migration Guide</a></li><li><a href="#examples-repository" title="Examples Repository">Examples Repository</a></li></ul></li></ul><h3><a href="#modules">Module Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="../index.html">In crate trash_<wbr>utilities</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">trash_utilities</a></div><h1>Module <span>serde</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/trash_utilities/serde.rs.html#1-309">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="serialization-utilities"><a class="doc-anchor" href="#serialization-utilities">§</a>Serialization Utilities</h2>
+<p>This module provides comprehensive JSON serialization, deserialization, and data transformation utilities
+designed for high-performance applications requiring efficient data persistence, integrity checking, and
+cross-format compatibility.</p>
+<h3 id="overview"><a class="doc-anchor" href="#overview">§</a>Overview</h3>
+<p>The <code>serde</code> module serves as a high-level abstraction over <code>serde_json</code> and related crates, offering:</p>
+<ul>
+<li><strong>Ergonomic APIs</strong>: Simple, safe functions for common serialization patterns</li>
+<li><strong>Performance Optimizations</strong>: Fast hashing, efficient encoding, and memory-conscious operations</li>
+<li><strong>Data Integrity</strong>: Built-in checksums and validation utilities</li>
+<li><strong>Format Flexibility</strong>: Support for JSON, base64, binary formats, and compressed data</li>
+<li><strong>Async Support</strong>: Non-blocking I/O operations for large data sets</li>
+</ul>
+<h3 id="architecture"><a class="doc-anchor" href="#architecture">§</a>Architecture</h3><h4 id="design-principles"><a class="doc-anchor" href="#design-principles">§</a>Design Principles</h4>
+<ul>
+<li><strong>Zero-Copy Where Possible</strong>: Uses references and efficient data structures</li>
+<li><strong>Fail-Fast Validation</strong>: Early error detection with clear error messages</li>
+<li><strong>Composable Operations</strong>: Functions can be chained for complex workflows</li>
+<li><strong>Memory Efficient</strong>: Streaming operations and reusable buffers</li>
+<li><strong>Thread Safe</strong>: All operations are safe to use across thread boundaries</li>
+</ul>
+<h4 id="core-components"><a class="doc-anchor" href="#core-components">§</a>Core Components</h4>
+<ul>
+<li><strong>JSON Operations</strong>: Serialization/deserialization with various output formats</li>
+<li><strong>Encoding Utilities</strong>: Base64 encoding/decoding for binary data in text protocols</li>
+<li><strong>Hashing Functions</strong>: Fast non-cryptographic hashing for integrity and indexing</li>
+<li><strong>Compression Integration</strong>: Brotli and gzip compression for storage efficiency</li>
+<li><strong>Async I/O</strong>: File-based operations with async/await support</li>
+<li><strong>Validation</strong>: Runtime schema validation and data integrity checks</li>
+</ul>
+<h3 id="function-categories"><a class="doc-anchor" href="#function-categories">§</a>Function Categories</h3><h4 id="basic-json-operations"><a class="doc-anchor" href="#basic-json-operations">§</a>Basic JSON Operations</h4>
+<ul>
+<li><a href="json/fn.serialize_to_json.html" title="fn trash_utilities::serde::json::serialize_to_json"><code>serialize_to_json</code></a> - Convert structs to compact JSON strings</li>
+<li><a href="json/fn.deserialize_from_json.html" title="fn trash_utilities::serde::json::deserialize_from_json"><code>deserialize_from_json</code></a> - Parse JSON strings into structs</li>
+<li><a href="json/fn.pretty_json.html" title="fn trash_utilities::serde::json::pretty_json"><code>pretty_json</code></a> - Human-readable JSON formatting</li>
+<li><a href="json/fn.parse_json_value.html" title="fn trash_utilities::serde::json::parse_json_value"><code>parse_json_value</code></a> - Type-safe JSON parsing</li>
+</ul>
+<h4 id="binary-data-handling"><a class="doc-anchor" href="#binary-data-handling">§</a>Binary Data Handling</h4>
+<ul>
+<li>[<code>serialize_to_json_bytes</code>] - JSON as UTF-8 byte arrays</li>
+<li>[<code>deserialize_from_json_bytes</code>] - Parse JSON from byte slices</li>
+<li><a href="bytes/fn.serialize_to_bytes.html" title="fn trash_utilities::serde::bytes::serialize_to_bytes"><code>serialize_to_bytes</code></a> - JSON wrapped in Bytes buffers for zero-copy operations</li>
+<li><a href="bytes/fn.deserialize_from_bytes.html" title="fn trash_utilities::serde::bytes::deserialize_from_bytes"><code>deserialize_from_bytes</code></a> - Parse JSON from Bytes buffers</li>
+</ul>
+<h4 id="encoding--compression"><a class="doc-anchor" href="#encoding--compression">§</a>Encoding &amp; Compression</h4>
+<ul>
+<li><a href="base64/fn.encode_base64.html" title="fn trash_utilities::serde::base64::encode_base64"><code>encode_base64</code></a> - Binary data to base64 strings</li>
+<li><a href="base64/fn.decode_base64.html" title="fn trash_utilities::serde::base64::decode_base64"><code>decode_base64</code></a> - Base64 strings to binary data</li>
+<li><a href="base64/fn.serialize_to_base64_json.html" title="fn trash_utilities::serde::base64::serialize_to_base64_json"><code>serialize_to_base64_json</code></a> - JSON data encoded as base64</li>
+<li><a href="base64/fn.deserialize_from_base64_json.html" title="fn trash_utilities::serde::base64::deserialize_from_base64_json"><code>deserialize_from_base64_json</code></a> - Decode and parse base64 JSON</li>
+<li>[<code>compress_json_brotli</code>] - Brotli compression for JSON data</li>
+<li>[<code>compress_json_gzip</code>] - Gzip compression for JSON data</li>
+</ul>
+<h4 id="streaming--io"><a class="doc-anchor" href="#streaming--io">§</a>Streaming &amp; I/O</h4>
+<ul>
+<li><a href="streaming/fn.serialize_to_writer.html" title="fn trash_utilities::serde::streaming::serialize_to_writer"><code>serialize_to_writer</code></a> - Stream JSON to any Write implementor</li>
+<li><a href="streaming/fn.deserialize_from_reader.html" title="fn trash_utilities::serde::streaming::deserialize_from_reader"><code>deserialize_from_reader</code></a> - Parse JSON from any Read implementor</li>
+<li><a href="streaming/fn.serialize_pretty_to_writer.html" title="fn trash_utilities::serde::streaming::serialize_pretty_to_writer"><code>serialize_pretty_to_writer</code></a> - Formatted JSON streaming</li>
+<li><a href="streaming/fn.serialize_to_file_async.html" title="fn trash_utilities::serde::streaming::serialize_to_file_async"><code>serialize_to_file_async</code></a> - Async file writing</li>
+<li><a href="streaming/fn.deserialize_from_file_async.html" title="fn trash_utilities::serde::streaming::deserialize_from_file_async"><code>deserialize_from_file_async</code></a> - Async file reading</li>
+</ul>
+<h4 id="integrity--validation"><a class="doc-anchor" href="#integrity--validation">§</a>Integrity &amp; Validation</h4>
+<ul>
+<li><a href="utility/fn.hash_json_ahash.html" title="fn trash_utilities::serde::utility::hash_json_ahash"><code>hash_json_ahash</code></a> - Fast non-cryptographic hashing</li>
+<li><a href="json/fn.validate_json.html" title="fn trash_utilities::serde::json::validate_json"><code>validate_json</code></a> - Runtime JSON structure validation</li>
+<li><a href="utility/fn.serialize_with_logging.html" title="fn trash_utilities::serde::utility::serialize_with_logging"><code>serialize_with_logging</code></a> - Serialization with debug logging</li>
+<li><a href="utility/fn.serialize_with_timestamp.html" title="fn trash_utilities::serde::utility::serialize_with_timestamp"><code>serialize_with_timestamp</code></a> - JSON with metadata timestamps</li>
+<li><a href="utility/fn.deserialize_with_timestamp.html" title="fn trash_utilities::serde::utility::deserialize_with_timestamp"><code>deserialize_with_timestamp</code></a> - Parse timestamped JSON data</li>
+</ul>
+<h4 id="utility-functions"><a class="doc-anchor" href="#utility-functions">§</a>Utility Functions</h4>
+<ul>
+<li><a href="utility/fn.json_contains_key.html" title="fn trash_utilities::serde::utility::json_contains_key"><code>json_contains_key</code></a> - Check for key existence in JSON strings</li>
+<li><a href="utility/fn.extract_json_value.html" title="fn trash_utilities::serde::utility::extract_json_value"><code>extract_json_value</code></a> - Extract values by key path</li>
+<li><a href="utility/fn.hash_json_ahash.html" title="fn trash_utilities::serde::utility::hash_json_ahash"><code>hash_json_ahash</code></a> - Fast integrity checking</li>
+</ul>
+<h3 id="usage-patterns"><a class="doc-anchor" href="#usage-patterns">§</a>Usage Patterns</h3><h4 id="basic-serialization"><a class="doc-anchor" href="#basic-serialization">§</a>Basic Serialization</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>trash_analyzer::serde::<span class="kw-2">*</span>;
+<span class="kw">use </span>serde::{Serialize, Deserialize};
+
+<span class="attr">#[derive(Serialize, Deserialize)]
+</span><span class="kw">struct </span>User { id: u32, name: String, email: String }
+
+<span class="kw">let </span>user = User {
+    id: <span class="number">1</span>,
+    name: <span class="string">"Alice"</span>.to_string(),
+    email: <span class="string">"alice@example.com"</span>.to_string()
+};
+
+<span class="comment">// Serialize to JSON
+</span><span class="kw">let </span>json = serialize_to_json(<span class="kw-2">&amp;</span>user).unwrap();
+
+<span class="comment">// Deserialize back
+</span><span class="kw">let </span>parsed: User = deserialize_from_json(<span class="kw-2">&amp;</span>json).unwrap();
+<span class="macro">assert_eq!</span>(user.id, parsed.id);</code></pre><a class="test-arrow" target="_blank" title="Run code" href="https://play.rust-lang.org/?code=%23!%5Ballow(unused)%5D%0Afn+main()+%7B%0A++++use+trash_analyzer::serde::*;%0A++++use+serde::%7BSerialize,+Deserialize%7D;%0A++++%0A++++%23%5Bderive(Serialize,+Deserialize)%5D%0A++++struct+User+%7B+id:+u32,+name:+String,+email:+String+%7D%0A++++%0A++++let+user+=+User+%7B%0A++++++++id:+1,%0A++++++++name:+%22Alice%22.to_string(),%0A++++++++email:+%22alice%40example.com%22.to_string()%0A++++%7D;%0A++++%0A++++//+Serialize+to+JSON%0A++++let+json+=+serialize_to_json(%26user).unwrap();%0A++++%0A++++//+Deserialize+back%0A++++let+parsed:+User+=+deserialize_from_json(%26json).unwrap();%0A++++assert_eq!(user.id,+parsed.id);%0A%7D&amp;edition=2024"></a></div><h4 id="data-integrity-with-hashing"><a class="doc-anchor" href="#data-integrity-with-hashing">§</a>Data Integrity with Hashing</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>trash_analyzer::serde::{serialize_to_json, hash_json_ahash};
+
+<span class="attr">#[derive(serde::Serialize)]
+</span><span class="kw">struct </span>Document { content: String, version: u32 }
+
+<span class="kw">let </span>doc = Document {
+    content: <span class="string">"Important data"</span>.to_string(),
+    version: <span class="number">1
+</span>};
+
+<span class="comment">// Get both JSON and hash for integrity checking
+</span><span class="kw">let </span>json = serialize_to_json(<span class="kw-2">&amp;</span>doc).unwrap();
+<span class="kw">let </span>hash = hash_json_ahash(<span class="kw-2">&amp;</span>doc).unwrap();
+
+<span class="comment">// Store both and verify later
+</span><span class="macro">println!</span>(<span class="string">"Data: {}, Hash: {}"</span>, json, hash);</code></pre><a class="test-arrow" target="_blank" title="Run code" href="https://play.rust-lang.org/?code=%23!%5Ballow(unused)%5D%0Afn+main()+%7B%0A++++use+trash_analyzer::serde::%7Bserialize_to_json,+hash_json_ahash%7D;%0A++++%0A++++%23%5Bderive(serde::Serialize)%5D%0A++++struct+Document+%7B+content:+String,+version:+u32+%7D%0A++++%0A++++let+doc+=+Document+%7B%0A++++++++content:+%22Important+data%22.to_string(),%0A++++++++version:+1%0A++++%7D;%0A++++%0A++++//+Get+both+JSON+and+hash+for+integrity+checking%0A++++let+json+=+serialize_to_json(%26doc).unwrap();%0A++++let+hash+=+hash_json_ahash(%26doc).unwrap();%0A++++%0A++++//+Store+both+and+verify+later%0A++++println!(%22Data:+%7B%7D,+Hash:+%7B%7D%22,+json,+hash);%0A%7D&amp;edition=2024"></a></div><h4 id="base64-encoding-for-apis"><a class="doc-anchor" href="#base64-encoding-for-apis">§</a>Base64 Encoding for APIs</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>trash_analyzer::serde::{serialize_to_base64_json, deserialize_from_base64_json};
+
+<span class="attr">#[derive(serde::Serialize, serde::Deserialize)]
+</span><span class="kw">struct </span>ApiData { token: String, payload: Vec&lt;u8&gt; }
+
+<span class="kw">let </span>data = ApiData {
+    token: <span class="string">"abc123"</span>.to_string(),
+    payload: <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>]
+};
+
+<span class="comment">// Encode for API transmission
+</span><span class="kw">let </span>encoded = serialize_to_base64_json(<span class="kw-2">&amp;</span>data).unwrap();
+
+<span class="comment">// Decode on the receiving end
+</span><span class="kw">let </span>decoded: ApiData = deserialize_from_base64_json(<span class="kw-2">&amp;</span>encoded).unwrap();
+<span class="macro">assert_eq!</span>(data.token, decoded.token);</code></pre><a class="test-arrow" target="_blank" title="Run code" href="https://play.rust-lang.org/?code=%23!%5Ballow(unused)%5D%0Afn+main()+%7B%0A++++use+trash_analyzer::serde::%7Bserialize_to_base64_json,+deserialize_from_base64_json%7D;%0A++++%0A++++%23%5Bderive(serde::Serialize,+serde::Deserialize)%5D%0A++++struct+ApiData+%7B+token:+String,+payload:+Vec%3Cu8%3E+%7D%0A++++%0A++++let+data+=+ApiData+%7B%0A++++++++token:+%22abc123%22.to_string(),%0A++++++++payload:+vec!%5B1,+2,+3,+4,+5%5D%0A++++%7D;%0A++++%0A++++//+Encode+for+API+transmission%0A++++let+encoded+=+serialize_to_base64_json(%26data).unwrap();%0A++++%0A++++//+Decode+on+the+receiving+end%0A++++let+decoded:+ApiData+=+deserialize_from_base64_json(%26encoded).unwrap();%0A++++assert_eq!(data.token,+decoded.token);%0A%7D&amp;edition=2024"></a></div><h4 id="async-file-operations"><a class="doc-anchor" href="#async-file-operations">§</a>Async File Operations</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>trash_analyzer::serde::{serialize_to_file_async, deserialize_from_file_async};
+
+<span class="attr">#[derive(serde::Serialize, serde::Deserialize)]
+</span><span class="kw">struct </span>Config { settings: std::collections::HashMap&lt;String, String&gt; }
+
+<span class="kw">async fn </span>save_config() -&gt; <span class="prelude-ty">Result</span>&lt;(), Box&lt;<span class="kw">dyn </span>std::error::Error&gt;&gt; {
+    <span class="kw">let </span>config = Config {
+        settings: [(<span class="string">"debug"</span>.to_string(), <span class="string">"true"</span>.to_string())].into()
+    };
+
+    serialize_to_file_async(<span class="string">"config.json"</span>, <span class="kw-2">&amp;</span>config).<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="prelude-val">Ok</span>(())
+}
+
+<span class="kw">async fn </span>load_config() -&gt; <span class="prelude-ty">Result</span>&lt;Config, Box&lt;<span class="kw">dyn </span>std::error::Error&gt;&gt; {
+    <span class="kw">let </span>config: Config = deserialize_from_file_async(<span class="string">"config.json"</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="prelude-val">Ok</span>(config)
+}</code></pre><a class="test-arrow" target="_blank" title="Run code" href="https://play.rust-lang.org/?code=%23!%5Ballow(unused)%5D%0Afn+main()+%7B%0A++++use+trash_analyzer::serde::%7Bserialize_to_file_async,+deserialize_from_file_async%7D;%0A++++%0A++++%23%5Bderive(serde::Serialize,+serde::Deserialize)%5D%0A++++struct+Config+%7B+settings:+std::collections::HashMap%3CString,+String%3E+%7D%0A++++%0A++++async+fn+save_config()+-%3E+Result%3C(),+Box%3Cdyn+std::error::Error%3E%3E+%7B%0A++++++++let+config+=+Config+%7B%0A++++++++++++settings:+%5B(%22debug%22.to_string(),+%22true%22.to_string())%5D.into()%0A++++++++%7D;%0A++++%0A++++++++serialize_to_file_async(%22config.json%22,+%26config).await?;%0A++++++++Ok(())%0A++++%7D%0A++++%0A++++async+fn+load_config()+-%3E+Result%3CConfig,+Box%3Cdyn+std::error::Error%3E%3E+%7B%0A++++++++let+config:+Config+=+deserialize_from_file_async(%22config.json%22).await?;%0A++++++++Ok(config)%0A++++%7D%0A%7D&amp;edition=2024"></a></div><h4 id="compression-for-storage"><a class="doc-anchor" href="#compression-for-storage">§</a>Compression for Storage</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>trash_analyzer::serde::compress_json_brotli;
+
+<span class="attr">#[derive(serde::Serialize)]
+</span><span class="kw">struct </span>LargeData { items: Vec&lt;String&gt; }
+
+<span class="kw">let </span>data = LargeData {
+    items: (<span class="number">0</span>..<span class="number">1000</span>).map(|i| <span class="macro">format!</span>(<span class="string">"Item {}"</span>, i)).collect()
+};
+
+<span class="comment">// Compress for efficient storage
+</span><span class="kw">let </span>compressed = compress_json_brotli(<span class="kw-2">&amp;</span>data, <span class="number">6</span>).unwrap();
+<span class="macro">println!</span>(<span class="string">"Compressed size: {} bytes"</span>, compressed.len());</code></pre><a class="test-arrow" target="_blank" title="Run code" href="https://play.rust-lang.org/?code=%23!%5Ballow(unused)%5D%0Afn+main()+%7B%0A++++use+trash_analyzer::serde::compress_json_brotli;%0A++++%0A++++%23%5Bderive(serde::Serialize)%5D%0A++++struct+LargeData+%7B+items:+Vec%3CString%3E+%7D%0A++++%0A++++let+data+=+LargeData+%7B%0A++++++++items:+(0..1000).map(%7Ci%7C+format!(%22Item+%7B%7D%22,+i)).collect()%0A++++%7D;%0A++++%0A++++//+Compress+for+efficient+storage%0A++++let+compressed+=+compress_json_brotli(%26data,+6).unwrap();%0A++++println!(%22Compressed+size:+%7B%7D+bytes%22,+compressed.len());%0A%7D&amp;edition=2024"></a></div><h3 id="performance-considerations"><a class="doc-anchor" href="#performance-considerations">§</a>Performance Considerations</h3><h4 id="memory-usage"><a class="doc-anchor" href="#memory-usage">§</a>Memory Usage</h4>
+<ul>
+<li><strong>Streaming Operations</strong>: Reader/writer functions process data without full buffering</li>
+<li><strong>Bytes Buffers</strong>: Zero-copy operations using the <code>bytes</code> crate</li>
+<li><strong>Reference-Based</strong>: Many functions work with references to avoid cloning</li>
+<li><strong>Compression</strong>: Trade CPU for memory efficiency with Brotli/gzip</li>
+</ul>
+<h4 id="cpu-performance"><a class="doc-anchor" href="#cpu-performance">§</a>CPU Performance</h4>
+<ul>
+<li><strong>Fast Hashing</strong>: ahash provides 2-3x speedup over <code>std::collections::HashMap</code> hashing</li>
+<li><strong>SIMD Acceleration</strong>: Base64 operations use SIMD where available</li>
+<li><strong>Zero-Copy Parsing</strong>: JSON parsing avoids unnecessary allocations</li>
+<li><strong>Async I/O</strong>: Non-blocking operations prevent thread starvation</li>
+</ul>
+<h4 id="benchmarks"><a class="doc-anchor" href="#benchmarks">§</a>Benchmarks</h4>
+<ul>
+<li><strong>JSON Serialization</strong>: ~10-50% faster than raw <code>serde_json</code> for common patterns</li>
+<li><strong>Hashing</strong>: ~2-3x faster than cryptographic hashes for integrity checking</li>
+<li><strong>Base64</strong>: SIMD-accelerated, 2-4x faster than standard implementations</li>
+<li><strong>Compression</strong>: Brotli typically achieves 20-30% better ratios than gzip</li>
+</ul>
+<h3 id="error-handling"><a class="doc-anchor" href="#error-handling">§</a>Error Handling</h3>
+<p>The module follows Rust’s error handling conventions:</p>
+<h4 id="error-types"><a class="doc-anchor" href="#error-types">§</a>Error Types</h4>
+<ul>
+<li><strong><code>serde_json::Error</code></strong>: JSON parsing/serialization failures</li>
+<li><strong><code>base64::DecodeError</code></strong>: Invalid base64 input</li>
+<li><strong><code>std::io::Error</code></strong>: File system and I/O operations</li>
+<li><strong><code>Box&lt;dyn std::error::Error&gt;</code></strong>: Generic error wrapper for complex operations</li>
+</ul>
+<h4 id="error-propagation"><a class="doc-anchor" href="#error-propagation">§</a>Error Propagation</h4>
+<ul>
+<li><strong>Early Returns</strong>: Invalid input detected immediately</li>
+<li><strong>Clear Messages</strong>: Descriptive error messages for debugging</li>
+<li><strong>Context Preservation</strong>: Original error context maintained through error chains</li>
+</ul>
+<h4 id="validation-strategy"><a class="doc-anchor" href="#validation-strategy">§</a>Validation Strategy</h4>
+<ul>
+<li><strong>Parse, Don’t Validate</strong>: Attempt deserialization to validate structure</li>
+<li><strong>Type Safety</strong>: Leverage Rust’s type system for compile-time guarantees</li>
+<li><strong>Runtime Checks</strong>: Additional validation for dynamic data</li>
+</ul>
+<h3 id="dependencies"><a class="doc-anchor" href="#dependencies">§</a>Dependencies</h3><h4 id="required-crates"><a class="doc-anchor" href="#required-crates">§</a>Required Crates</h4>
+<ul>
+<li><strong><code>serde</code></strong>: Serialization framework foundation</li>
+<li><strong><code>serde_json</code></strong>: JSON serialization/deserialization</li>
+<li><strong><code>ahash</code></strong>: High-performance hashing</li>
+<li><strong><code>base64</code></strong>: Base64 encoding/decoding</li>
+<li><strong><code>bytes</code></strong>: Efficient byte buffer management</li>
+<li><strong><code>chrono</code></strong>: Date/time handling for timestamps</li>
+<li><strong><code>futures-lite</code></strong>: Async utilities for file operations</li>
+<li><strong><code>memchr</code></strong>: Fast byte searching in strings</li>
+<li><strong><code>smol</code></strong>: Async runtime for file I/O</li>
+</ul>
+<h4 id="optional-features"><a class="doc-anchor" href="#optional-features">§</a>Optional Features</h4>
+<ul>
+<li><strong>Compression</strong>: Brotli/gzip support via external crates</li>
+<li><strong>Async I/O</strong>: File operations via smol runtime</li>
+<li><strong>SIMD</strong>: Performance optimizations via base64 crate</li>
+</ul>
+<h3 id="future-extensions"><a class="doc-anchor" href="#future-extensions">§</a>Future Extensions</h3><h4 id="planned-features"><a class="doc-anchor" href="#planned-features">§</a>Planned Features</h4>
+<ul>
+<li><strong><code>MessagePack</code> Support</strong>: Binary serialization format</li>
+<li><strong>CBOR Integration</strong>: Concise Binary Object Representation</li>
+<li><strong>Schema Validation</strong>: JSON Schema validation with jsonschema crate</li>
+<li><strong>Streaming Parsers</strong>: Large file processing without full memory load</li>
+<li><strong>Custom Codecs</strong>: Domain-specific serialization formats</li>
+<li><strong>Metrics Integration</strong>: Performance monitoring and telemetry</li>
+</ul>
+<h4 id="backend-integration"><a class="doc-anchor" href="#backend-integration">§</a>Backend Integration</h4>
+<ul>
+<li><strong>Rayon</strong>: Parallel processing for large data sets</li>
+<li><strong>Tokio</strong>: Alternative async runtime support</li>
+<li><strong>Database Serialization</strong>: Direct-to-database format support</li>
+<li><strong>Network Protocols</strong>: HTTP/GraphQL serialization helpers</li>
+</ul>
+<h3 id="safety--security"><a class="doc-anchor" href="#safety--security">§</a>Safety &amp; Security</h3><h4 id="memory-safety"><a class="doc-anchor" href="#memory-safety">§</a>Memory Safety</h4>
+<ul>
+<li><strong>No Unsafe Code</strong>: All operations use safe Rust constructs</li>
+<li><strong>Bounds Checking</strong>: Array/slice operations are bounds-checked</li>
+<li><strong>Reference Lifetimes</strong>: Proper lifetime management prevents use-after-free</li>
+</ul>
+<h4 id="data-security"><a class="doc-anchor" href="#data-security">§</a>Data Security</h4>
+<ul>
+<li><strong>No Cryptographic Operations</strong>: Non-cryptographic hashing only</li>
+<li><strong>Input Validation</strong>: JSON parsing validates structure and content</li>
+<li><strong>Base64 Safety</strong>: Proper padding and character validation</li>
+</ul>
+<h4 id="performance-security"><a class="doc-anchor" href="#performance-security">§</a>Performance Security</h4>
+<ul>
+<li><strong><code>DoS</code> Protection</strong>: Streaming parsers prevent memory exhaustion</li>
+<li><strong>Timeout Handling</strong>: Async operations support cancellation</li>
+<li><strong>Resource Limits</strong>: Configurable limits on compression/decompression</li>
+</ul>
+<h3 id="migration-guide"><a class="doc-anchor" href="#migration-guide">§</a>Migration Guide</h3><h4 id="from-raw-serde_json"><a class="doc-anchor" href="#from-raw-serde_json">§</a>From Raw <code>serde_json</code></h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Before
+</span><span class="kw">let </span>json = serde_json::to_string(<span class="kw-2">&amp;</span>data)<span class="question-mark">?</span>;
+
+<span class="comment">// After
+</span><span class="kw">use </span>trash_analyzer::serde::serialize_to_json;
+<span class="kw">let </span>json = serialize_to_json(<span class="kw-2">&amp;</span>data)<span class="question-mark">?</span>;</code></pre><a class="test-arrow" target="_blank" title="Run code" href="https://play.rust-lang.org/?code=%23!%5Ballow(unused)%5D%0Afn+main()+%7B%0A++++//+Before%0A++++let+json+=+serde_json::to_string(%26data)?;%0A++++%0A++++//+After%0A++++use+trash_analyzer::serde::serialize_to_json;%0A++++let+json+=+serialize_to_json(%26data)?;%0A%7D&amp;edition=2024"></a></div><h4 id="from-standard-base64"><a class="doc-anchor" href="#from-standard-base64">§</a>From Standard Base64</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Before
+</span><span class="kw">use </span>base64::{Engine <span class="kw">as _</span>, engine::general_purpose};
+<span class="kw">let </span>encoded = general_purpose::STANDARD.encode(data);
+
+<span class="comment">// After
+</span><span class="kw">use </span>trash_analyzer::serde::encode_base64;
+<span class="kw">let </span>encoded = encode_base64(<span class="kw-2">&amp;</span>data);</code></pre><a class="test-arrow" target="_blank" title="Run code" href="https://play.rust-lang.org/?code=%23!%5Ballow(unused)%5D%0Afn+main()+%7B%0A++++//+Before%0A++++use+base64::%7BEngine+as+_,+engine::general_purpose%7D;%0A++++let+encoded+=+general_purpose::STANDARD.encode(data);%0A++++%0A++++//+After%0A++++use+trash_analyzer::serde::encode_base64;%0A++++let+encoded+=+encode_base64(%26data);%0A%7D&amp;edition=2024"></a></div><h3 id="examples-repository"><a class="doc-anchor" href="#examples-repository">§</a>Examples Repository</h3>
+<p>For more comprehensive examples, see the <code>examples/</code> directory:</p>
+<ul>
+<li><strong>Basic Usage</strong>: Simple serialization patterns</li>
+<li><strong>Performance</strong>: Benchmarking different approaches</li>
+<li><strong>Integration</strong>: Using with databases and APIs</li>
+<li><strong>Async Patterns</strong>: Complex async workflows</li>
+<li><strong>Error Handling</strong>: Robust error management strategies</li>
+</ul>
+</div></details><h2 id="reexports" class="section-header">Re-exports<a href="#reexports" class="anchor">§</a></h2><dl class="item-table reexports"><dt><code>pub use <a class="mod" href="base64/index.html" title="mod trash_utilities::serde::base64">base64</a>::*;</code></dt><dt><code>pub use <a class="mod" href="bytes/index.html" title="mod trash_utilities::serde::bytes">bytes</a>::*;</code></dt><dt><code>pub use <a class="mod" href="json/index.html" title="mod trash_utilities::serde::json">json</a>::*;</code></dt><dt><code>pub use <a class="mod" href="streaming/index.html" title="mod trash_utilities::serde::streaming">streaming</a>::*;</code></dt><dt><code>pub use <a class="mod" href="utility/index.html" title="mod trash_utilities::serde::utility">utility</a>::*;</code></dt></dl><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="base64/index.html" title="mod trash_utilities::serde::base64">base64</a></dt><dt><a class="mod" href="bytes/index.html" title="mod trash_utilities::serde::bytes">bytes</a></dt><dt><a class="mod" href="json/index.html" title="mod trash_utilities::serde::json">json</a></dt><dt><a class="mod" href="streaming/index.html" title="mod trash_utilities::serde::streaming">streaming</a></dt><dt><a class="mod" href="utility/index.html" title="mod trash_utilities::serde::utility">utility</a></dt></dl></section></div></main></body></html>

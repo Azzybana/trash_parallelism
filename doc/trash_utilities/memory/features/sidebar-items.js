@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["global_enhanced_memory_manager"],"struct":["CompressedAllocation","CompressedMemoryPool","MemoryMappedPool","ParallelMemoryProcessor","SecureAllocation","SecureMemoryPool"]};

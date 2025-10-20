@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["create_async_processor"],"struct":["AsyncChannelProcessor","ChannelMultiplexer"],"type":["ProcessorFn"]};

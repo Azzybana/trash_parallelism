@@ -1,0 +1,295 @@
+/* Begin theme: trash */
+/*
+Original by Dempfi (https://github.com/dempfi/trash)
+*/
+:root[data-theme="trash"] {
+    --main-background-color: #0E0D13;
+    /* Chinese Black */
+    --main-color: #E9EAEC;
+    /* Bright Gray */
+    --settings-input-color: #FFFB1C;
+    /* Bright Blue */
+    --settings-input-border-color: #757575;
+    /* Sonic Silver */
+    --settings-button-color: #FFFBFC;
+    /* Snow */
+    --settings-button-border-focus: #E9EAEC;
+    /* Bright Gray */
+    --sidebar-background-color: #232228;
+    /* Raisin Black */
+    --sidebar-background-color-hover: rgba(117, 117, 117, 0.33);
+    /* Sonic Silver */
+    --sidebar-border-color: #424244;
+    /* Arsenic */
+    --code-block-background-color: #424244;
+    /* Arsenic */
+    --scrollbar-track-background-color: transparent;
+    --scrollbar-thumb-background-color: #757575;
+    /* Sonic Silver */
+    --scrollbar-color: #757575 #232228;
+    /* Sonic Silver, Raisin Black */
+    --headings-border-bottom-color: #424244;
+    /* Arsenic */
+    --border-color: #424244;
+    /* Arsenic */
+    --button-background-color: #232228;
+    /* Raisin Black */
+    --right-side-color: #757575;
+    /* Sonic Silver */
+    --code-attribute-color: #757575;
+    /* Sonic Silver */
+    --toggles-color: #757575;
+    /* Sonic Silver */
+    --toggle-filter: invert(100%);
+    --mobile-sidebar-menu-filter: invert(100%);
+    --search-input-focused-border-color: #424244;
+    /* Arsenic */
+    --copy-path-button-color: #FFFBFC;
+    /* Snow */
+    --copy-path-img-filter: invert(70%);
+    --copy-path-img-hover-filter: invert(100%);
+    --code-example-button-color: #E9EAEC;
+    /* Bright Gray */
+    --code-example-button-hover-color: #FFFBFC;
+    /* Snow */
+    --codeblock-error-hover-color: rgb(255, 21, 10);
+    /* Bright Red */
+    --codeblock-error-color: rgba(255, 21, 10, 0.5);
+    /* Bright Red */
+    --codeblock-ignore-hover-color: rgb(240, 122, 0);
+    /* Bright Orange */
+    --codeblock-ignore-color: rgba(240, 122, 0, 0.6);
+    /* Bright Orange */
+    --warning-border-color: #F07A00;
+    /* Bright Orange */
+    --type-link-color: #FF150A;
+    /* Bright Red */
+    --trait-link-color: #FFFB1C;
+    /* Bright Blue */
+    --assoc-item-link-color: #FFFB1C;
+    /* Bright Blue */
+    --function-link-color: #61FF00;
+    /* Electric Lime */
+    --macro-link-color: #FF150A;
+    /* Bright Red */
+    --keyword-link-color: #FFFB1C;
+    /* Bright Blue */
+    --attribute-link-color: #FFFB1C;
+    /* Bright Blue */
+    --mod-link-color: #FFFB1C;
+    /* Bright Blue */
+    --link-color: #FFFB1C;
+    /* Bright Blue */
+    --sidebar-link-color: #FFFB1C;
+    /* Bright Yellow */
+    --sidebar-current-link-background-color: transparent;
+    --search-result-link-focus-background-color: #424244;
+    /* Arsenic */
+    --search-result-border-color: #757575;
+    /* Sonic Silver */
+    --search-color: #FFFBFC;
+    /* Snow */
+    --search-error-code-background-color: #232228;
+    /* Raisin Black */
+    --search-results-alias-color: #E9EAEC;
+    /* Bright Gray */
+    --search-results-grey-color: #757575;
+    /* Sonic Silver */
+    --search-tab-title-count-color: #757575;
+    /* Sonic Silver */
+    --search-tab-button-not-selected-border-top-color: none;
+    --search-tab-button-not-selected-background: transparent !important;
+    --search-tab-button-selected-border-top-color: none;
+    --search-tab-button-selected-background: #232228 !important;
+    /* Raisin Black */
+    --settings-menu-filter: invert(70%);
+    --settings-menu-hover-filter: invert(100%);
+    --stab-background-color: #424244;
+    /* Arsenic */
+    --stab-code-color: #F3F2F0;
+    /* Anti-Flash White */
+    --code-highlight-kw-color: #FFFB1C;
+    /* Bright Yellow */
+    --code-highlight-kw-2-color: #FFF200;
+    /* Golden Yellow */
+    --code-highlight-lifetime-color: #FFD700;
+    /* Gold */
+    --code-highlight-prelude-color: #61FF00;
+    /* Electric Lime */
+    --code-highlight-prelude-val-color: #32CD32;
+    /* Lime Green */
+    --code-highlight-number-color: #F07A00;
+    /* Bright Orange */
+    --code-highlight-string-color: #FFA500;
+    /* Orange */
+    --code-highlight-literal-color: #FF150A;
+    /* Bright Red */
+    --code-highlight-attribute-color: #F3F2F0;
+    /* Anti-Flash White */
+    --code-highlight-self-color: #FFFF00;
+    /* Yellow */
+    --code-highlight-macro-color: #DC143C;
+    /* Crimson */
+    --code-highlight-question-mark-color: #FF8C00;
+    /* Dark Orange */
+    --code-highlight-comment-color: #00FF00;
+    /* Green */
+    --code-highlight-doc-comment-color: #7FFF00;
+    /* Chartreuse */
+    --src-line-numbers-span-color: #424244;
+    /* Arsenic */
+    --src-line-number-highlighted-background-color: rgba(253, 242, 247, 0.04);
+    /* Softer Lavender Blush */
+    --target-background-color: rgba(253, 242, 247, 0.04);
+    /* Softer Lavender Blush */
+    --target-border-color: rgba(67, 140, 255, 0.85);
+    /* Bright Blue */
+    --kbd-color: #E9EAEC;
+    /* Bright Gray */
+    --kbd-background: #424244;
+    /* Arsenic */
+    --kbd-box-shadow-color: #424244;
+    /* Arsenic */
+    --rust-logo-filter: drop-shadow(1px 0 0px #FFFBFC) drop-shadow(0 1px 0 #FFFBFC) drop-shadow(-1px 0 0 #FFFBFC) drop-shadow(0 -1px 0 #FFFBFC);
+    /* Snow */
+    /* match border-color; uses https://codepen.io/sosuke/pen/Pjoqqp */
+    --crate-search-div-filter: invert(41%) sepia(12%) saturate(487%) hue-rotate(171deg) brightness(94%) contrast(94%);
+    --crate-search-div-hover-filter: invert(98%) sepia(12%) saturate(81%) hue-rotate(343deg) brightness(113%) contrast(76%);
+    --crate-search-hover-border: #E9EAEC;
+    /* Bright Gray */
+    --src-sidebar-background-selected: #232228;
+    /* Raisin Black */
+    --src-sidebar-background-hover: #232228;
+    /* Raisin Black */
+    --table-alt-row-background-color: #424244;
+    /* Arsenic */
+    --codeblock-link-background: #424244;
+    /* Arsenic */
+    --scrape-example-toggle-line-background: #757575;
+    /* Sonic Silver */
+    --scrape-example-toggle-line-hover-background: #E9EAEC;
+    /* Bright Gray */
+    --scrape-example-code-line-highlight: #0E0D13;
+    /* Chinese Black */
+    --scrape-example-code-line-highlight-focus: #232228;
+    /* Raisin Black */
+    --scrape-example-help-border-color: #757575;
+    /* Sonic Silver */
+    --scrape-example-help-color: #F3F2F0;
+    /* Anti-Flash White */
+    --scrape-example-help-hover-border-color: #FFFBFC;
+    /* Snow */
+    --scrape-example-help-hover-color: #FFFBFC;
+    /* Snow */
+    --scrape-example-code-wrapper-background-start: rgba(14, 13, 19, 1);
+    /* Chinese Black */
+    --scrape-example-code-wrapper-background-end: rgba(14, 13, 19, 0);
+    /* Chinese Black */
+    --sidebar-resizer-hover: hsl(250, 19%, 6%);
+    /* Chinese Black */
+    --sidebar-resizer-active: hsl(250, 8%, 15%);
+    /* Raisin Black */
+}
+
+:root[data-theme="trash"] h1,
+:root[data-theme="trash"] h2,
+:root[data-theme="trash"] h3,
+:root[data-theme="trash"] h4,
+:where(:root[data-theme="trash"]) h1 a,
+:root[data-theme="trash"] .sidebar h2 a,
+:root[data-theme="trash"] .sidebar h3 a {
+    color: #FFFBFC;
+    /* Snow */
+}
+
+:root[data-theme="trash"] .docblock code {
+    color: #FFFB1C;
+    /* Bright Blue */
+}
+
+:root[data-theme="trash"] .docblock a>code {
+    color: #FFFB1C !important;
+    /* Bright Blue */
+}
+
+:root[data-theme="trash"] .code-header,
+:root[data-theme="trash"] .docblock pre>code,
+:root[data-theme="trash"] pre,
+:root[data-theme="trash"] pre>code,
+:root[data-theme="trash"] .item-info code,
+:root[data-theme="trash"] .rustdoc.source .example-wrap {
+    color: #F3F2F0;
+    /* Anti-Flash White */
+}
+
+:root[data-theme="trash"] .sidebar .current,
+:root[data-theme="trash"] .sidebar .current a,
+:root[data-theme="trash"] .sidebar a:hover,
+:root[data-theme="trash"] #src-sidebar div.files>a:hover,
+:root[data-theme="trash"] details.dir-entry summary:hover,
+:root[data-theme="trash"] #src-sidebar div.files>a:focus,
+:root[data-theme="trash"] details.dir-entry summary:focus,
+:root[data-theme="trash"] #src-sidebar div.files>a.selected {
+    color: #FFFB1C;
+    /* Bright Yellow */
+}
+
+:root[data-theme="trash"] .sidebar-elems .location {
+    color: #FFFB1C;
+    /* Bright Blue */
+}
+
+:root[data-theme="trash"] a[data-nosnippet].line-highlighted {
+    color: #757575;
+    /* Sonic Silver */
+    padding-right: 7px;
+    border-right: 1px solid #FFFB1C;
+    /* Bright Yellow */
+}
+
+:root[data-theme="trash"] .search-results a:hover,
+:root[data-theme="trash"] .search-results a:focus {
+    color: #FFFBFC !important;
+    /* Snow */
+    background-color: #424244;
+    /* Arsenic */
+}
+
+:root[data-theme="trash"] .search-results a {
+    color: #FFFB1C;
+    /* Bright Blue */
+}
+
+:root[data-theme="trash"] .search-results a div.desc {
+    color: #E9EAEC;
+    /* Bright Gray */
+}
+
+:root[data-theme="trash"] .result-name .primitive>i,
+:root[data-theme="trash"] .result-name .keyword>i {
+    color: #757575;
+    /* Sonic Silver */
+}
+
+:root[data-theme="trash"] #search-tabs>button.selected {
+    border-bottom: 1px solid #FFFB1C !important;
+    /* Bright Yellow */
+    border-top: none;
+}
+
+:root[data-theme="trash"] #search-tabs>button:not(.selected) {
+    border: none;
+    background-color: transparent !important;
+}
+
+:root[data-theme="trash"] #search-tabs>button:hover {
+    border-bottom: 1px solid rgba(67, 140, 255, 0.3);
+    /* Bright Blue */
+}
+
+:root[data-theme="trash"] .settings-menu>a img,
+:root[data-theme="trash"] #sidebar-button>a::before {
+    filter: invert(100);
+}
+
+/* End theme: trash */
