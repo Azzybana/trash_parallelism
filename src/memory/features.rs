@@ -75,8 +75,6 @@
 ///     println!("Compressed {} bytes", compressed_data.len());
 /// }
 /// ```
-
-/// ```
 // Standard library imports
 use std::{
     io::{Read, Write},

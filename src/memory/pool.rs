@@ -72,7 +72,6 @@
 ///
 /// println!("Cache size: {}", cache.size());
 /// ```
-
 // Standard library imports
 use std::{
     alloc::{Layout, dealloc},

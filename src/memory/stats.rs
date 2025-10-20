@@ -75,7 +75,6 @@
 /// let imported = MemorySnapshot::import_base64(&base64_data).unwrap();
 /// assert!(imported.verify()); // Check integrity
 /// ```
-
 // Standard library imports
 use std::{hash::Hasher, time::Instant};
 

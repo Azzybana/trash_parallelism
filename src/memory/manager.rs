@@ -70,18 +70,20 @@
 /// let report = manager.memory_report();
 /// println!("{}", report);
 /// ```
-
-/// ```
 // Standard library imports
-use std::{fmt::Write, sync::Arc, thread::spawn, time::Duration};
+use std::{
+    fmt::Write,
+    sync::{Arc, OnceLock},
+    thread::spawn,
+    time::Duration,
+};
 
 // External crate imports
 use ahash::AHashMap;
 use parking_lot::{Mutex, RwLock};
 
-// Local imports
-/// ```
-// Standard library imports
+// Local imports (fixed)
+use super::{
     CompressedMemoryPool, MemoryEventLogger, MemoryEventType, MemoryPool, MemoryPoolConfig,
     MemorySnapshot, MemoryStats, ParallelMemoryProcessor, SecureMemoryPool, calc_ratio,
     get_mimalloc_stats,
@@ -353,7 +355,10 @@ impl Default for EnhancedMemoryManager {
 /// Get the global memory manager
 #[must_use]
 pub fn global_memory_manager() -> Arc<MemoryManager> {
-    Arc::new(MemoryManager::new())
+    static GLOBAL_MEMORY_MANAGER: OnceLock<Arc<MemoryManager>> = OnceLock::new();
+    GLOBAL_MEMORY_MANAGER
+        .get_or_init(|| Arc::new(MemoryManager::new()))
+        .clone()
 }
 
 /// Initialize memory management with monitoring
