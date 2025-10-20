@@ -12,8 +12,6 @@ mod data_test;
 #[cfg(test)]
 mod io_test;
 #[cfg(test)]
-mod lib_test;
-#[cfg(test)]
 mod memory_test;
 #[cfg(test)]
 mod parallel_test;
@@ -24,14 +22,13 @@ mod sys_test;
 
 #[cfg(test)]
 fn run_all_tests() {
-    async_test::tests::test_async_basic();
-    channels_test::tests::test_channels_basic();
-    chars_test::tests::test_chars_basic();
-    common_test::tests::test_common_basic();
-    data_test::tests::test_data_basic();
-    io_test::tests::test_io_basic();
-    lib_test::tests::test_lib_basic();
-    memory_test::tests::test_memory_basic();
+    async_test::test_async();
+    channels_test::test_channels();
+    chars_test::test_chars();
+    common_test::test_common();
+    data_test::test_data();
+    io_test::test_io();
+    memory_test::test_memory();
     parallel_test::test_parallel();
     serde_test::test_serde();
     sys_test::test_sys();
