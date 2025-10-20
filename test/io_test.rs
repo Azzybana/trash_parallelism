@@ -3,39 +3,30 @@ use trash_parallelism::io::*;
 
 #[test]
 pub fn test_read_file_async() {
-    // This would require an actual file, so we'll skip for now
-    // In a real test, you'd create a temp file and read it
+    smol::block_on(async {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let path = temp_file.path().to_str().unwrap();
+        let content = "Test content for reading";
+
+        std::fs::write(path, content).unwrap();
+
+        let read_content = read_file_async(path).await.unwrap();
+        assert_eq!(read_content, content);
+    });
 }
 
 #[test]
 pub fn test_write_file_async() {
-    // This would require writing to a temp file
-}
+    smol::block_on(async {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let path = temp_file.path().to_str().unwrap();
+        let content = "Hello, async world!";
 
-#[test]
-pub fn test_copy_file_async() {
-    // This is actually sync, not async
-    // Would need to create temp files
-}
+        write_file_async(path, content).await.unwrap();
 
-#[test]
-pub fn test_read_file_bytes_async() {
-    // Would need temp file
-}
-
-#[test]
-pub fn test_write_file_bytes_async() {
-    // Would need temp file
-}
-
-#[test]
-pub fn test_create_dir_async() {
-    // Would need temp directory
-}
-
-#[test]
-pub fn test_read_dir_async() {
-    // Would need temp directory with files
+        let read_content = std::fs::read_to_string(path).unwrap();
+        assert_eq!(read_content, content);
+    });
 }
 
 #[test]
@@ -309,6 +300,167 @@ pub fn test_async_file_processor_process_file_async() {
 }
 
 #[test]
+pub fn test_async_file_processor_with_progress_callback() {
+    smol::block_on(async {
+        // Create temp file
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let path = temp_file.path().to_str().unwrap();
+        std::fs::write(path, b"Hello, world!").unwrap();
+
+        let progress_called = std::sync::Arc::new(std::sync::Mutex::new(false));
+        let progress_clone = progress_called.clone();
+
+        let processor = streams::AsyncFileProcessor::with_config(4096, Some(Box::new(move |_| {
+            *progress_clone.lock().unwrap() = true;
+        })));
+
+        let results = processor.process_file(path, |chunk| chunk.len()).await.unwrap();
+
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0], 13);
+        assert!(*progress_called.lock().unwrap());
+    });
+}
+
+#[test]
+pub fn test_async_file_processor_with_progress_callback_async() {
+    smol::block_on(async {
+        // Create temp file
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let path = temp_file.path().to_str().unwrap();
+        std::fs::write(path, b"Hello, world!").unwrap();
+
+        let progress_called = std::sync::Arc::new(std::sync::Mutex::new(false));
+        let progress_clone = progress_called.clone();
+
+        let processor = streams::AsyncFileProcessor::with_config(4096, Some(Box::new(move |_| {
+            *progress_clone.lock().unwrap() = true;
+        })));
+
+        let results = processor.process_file_async(path, |chunk| async move { Ok(chunk.len()) }).await.unwrap();
+
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0], 13);
+        assert!(*progress_called.lock().unwrap());
+    });
+}
+
+#[test]
+pub fn test_async_file_processor_default() {
+    smol::block_on(async {
+        // Create temp file
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let path = temp_file.path().to_str().unwrap();
+        std::fs::write(path, b"Hello, world!").unwrap();
+
+        let processor = streams::AsyncFileProcessor::default();
+        let results = processor.process_file(path, |chunk| chunk.len()).await.unwrap();
+
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0], 13);
+    });
+}
+
+#[test]
+pub fn test_async_file_processor_builder() {
+    smol::block_on(async {
+        // Create temp file
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let path = temp_file.path().to_str().unwrap();
+        std::fs::write(path, b"Hello, world!").unwrap();
+
+        let progress_called = std::sync::Arc::new(std::sync::Mutex::new(false));
+        let progress_clone = progress_called.clone();
+
+        let processor = streams::AsyncFileProcessor::builder()
+            .buffer_size(1024)
+            .progress_callback(move |_| {
+                *progress_clone.lock().unwrap() = true;
+            })
+            .build();
+
+        let results = processor.process_file(path, |chunk| chunk.len()).await.unwrap();
+
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0], 13);
+        assert!(*progress_called.lock().unwrap());
+    });
+}
+
+#[test]
+pub fn test_process_file_async_function() {
+    smol::block_on(async {
+        // Create temp file
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let path = temp_file.path().to_str().unwrap();
+        std::fs::write(path, b"Hello, world!").unwrap();
+
+        let content_received = std::sync::Arc::new(std::sync::Mutex::new(String::new()));
+        let content_clone = content_received.clone();
+
+        streams::process_file_async(path, move |content| {
+            *content_clone.lock().unwrap() = content;
+        }).await.unwrap();
+
+        assert_eq!(*content_received.lock().unwrap(), "Hello, world!");
+    });
+}
+
+#[test]
+pub fn test_channel_stream_processor_start_background_processing() {
+    smol::block_on(async {
+        let counter = std::sync::Arc::new(std::sync::Mutex::new(0));
+        let counter_clone = counter.clone();
+
+        let processor = streams::ChannelStreamProcessor::new(move |x: i32| {
+            *counter_clone.lock().unwrap() += x;
+            x
+        });
+
+        processor.start_background_processing();
+
+        processor.send(5).await.unwrap();
+        processor.send(10).await.unwrap();
+
+        // Give some time for background processing
+        smol::Timer::after(std::time::Duration::from_millis(100)).await;
+
+        // Since background processing just processes and drops, we can't check the result
+        // But we can check that the processor was called by using a side effect
+        // Wait a bit more
+        smol::Timer::after(std::time::Duration::from_millis(100)).await;
+
+        // The counter should have been incremented
+        assert_eq!(*counter.lock().unwrap(), 15);
+    });
+}
+
+#[test]
+pub fn test_buffered_async_reader_eof() {
+    smol::block_on(async {
+        use futures_lite::io::Cursor;
+        let data = b""; // Empty data to simulate EOF
+        let cursor = Cursor::new(data.to_vec());
+        let mut reader = streams::BufferedAsyncReader::new(cursor, 20);
+
+        let buffer = reader.read_buffer().await.unwrap();
+        assert_eq!(buffer.len(), 0);
+    });
+}
+
+#[test]
+pub fn test_buffered_async_reader_buffer_size() {
+    smol::block_on(async {
+        use futures_lite::io::Cursor;
+        let data = b"Hello";
+        let cursor = Cursor::new(data.to_vec());
+        let reader = streams::BufferedAsyncReader::new(cursor, 42);
+
+        assert_eq!(reader.buffer_size(), 42);
+    });
+}
+
+#[test]
 pub fn test_async_stream_utils() {
     smol::block_on(async {
         use futures_lite::stream;
@@ -355,7 +507,90 @@ pub fn test_buffered_async_reader_read() {
 }
 
 #[test]
+pub fn test_copy_file_async() {
+    let temp_source = tempfile::NamedTempFile::new().unwrap();
+    let temp_dest = tempfile::NamedTempFile::new().unwrap();
+    let source_path = temp_source.path().to_str().unwrap();
+    let dest_path = temp_dest.path().to_str().unwrap();
+    let content = "Content to copy";
+
+    std::fs::write(source_path, content).unwrap();
+
+    let bytes_copied = copy_file_async(source_path, dest_path).unwrap();
+    assert_eq!(bytes_copied, content.len() as u64);
+
+    let copied_content = std::fs::read_to_string(dest_path).unwrap();
+    assert_eq!(copied_content, content);
+}
+
+#[test]
+pub fn test_write_file_bytes_async() {
+    smol::block_on(async {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let path = temp_file.path().to_str().unwrap();
+        let data = b"Hello, bytes world!";
+
+        write_file_bytes_async(path, data).await.unwrap();
+
+        let read_data = std::fs::read(path).unwrap();
+        assert_eq!(read_data, data);
+    });
+}
+
+#[test]
+pub fn test_create_dir_async() {
+    smol::block_on(async {
+        let temp_dir = tempfile::TempDir::new().unwrap();
+        let base_path = temp_dir.path().to_str().unwrap();
+        let new_dir_path = format!("{base_path}/new_test_dir");
+
+        create_dir_async(&new_dir_path).await.unwrap();
+
+        assert!(std::fs::metadata(&new_dir_path).unwrap().is_dir());
+    });
+}
+
+#[test]
+pub fn test_read_dir_async() {
+    smol::block_on(async {
+        let temp_dir = tempfile::TempDir::new().unwrap();
+        let dir_path = temp_dir.path().to_str().unwrap();
+
+        // Create some test files
+        std::fs::write(format!("{dir_path}/file1.txt"), "content1").unwrap();
+        std::fs::write(format!("{dir_path}/file2.txt"), "content2").unwrap();
+
+        let entries = read_dir_async(dir_path).await.unwrap();
+
+        assert_eq!(entries.len(), 2);
+        assert!(entries.contains(&"file1.txt".to_string()));
+        assert!(entries.contains(&"file2.txt".to_string()));
+    });
+}
+
+#[test]
+pub fn test_atomic_counter_default() {
+    let counter = AtomicCounter::default();
+    assert_eq!(counter.get(), 0);
+}
+
+#[test]
+pub fn test_string_interner_default() {
+    let interner = StringInterner::default();
+    assert_eq!(interner.len(), 0);
+    assert!(interner.is_empty());
+}
+
+#[test]
 pub fn test_io() {
+    test_read_file_async();
+    test_write_file_async();
+    test_copy_file_async();
+    test_write_file_bytes_async();
+    test_create_dir_async();
+    test_read_dir_async();
+    test_atomic_counter_default();
+    test_string_interner_default();
     test_compress_brotli();
     test_decompress_brotli();
     test_atomic_counter();
@@ -377,4 +612,12 @@ pub fn test_io() {
     test_async_file_writer_compressed();
     test_streaming_file_writer();
     test_advanced_file_writer();
+    test_async_file_processor_with_progress_callback();
+    test_async_file_processor_with_progress_callback_async();
+    test_async_file_processor_default();
+    test_async_file_processor_builder();
+    test_process_file_async_function();
+    test_channel_stream_processor_start_background_processing();
+    test_buffered_async_reader_eof();
+    test_buffered_async_reader_buffer_size();
 }
