@@ -344,6 +344,10 @@ pub fn extract_json_value(json: &str, key: &str) -> Option<String> {
         let mut value_end = 0;
 
         for (i, c) in chars.enumerate() {
+            if c == '}' && brace_count == 0 && bracket_count == 0 && !in_string {
+                value_end = i;
+                break;
+            }
             match c {
                 '"' => in_string = !in_string,
                 '{' if !in_string => brace_count += 1,
@@ -355,11 +359,6 @@ pub fn extract_json_value(json: &str, key: &str) -> Option<String> {
                     break;
                 }
                 _ => {}
-            }
-
-            if c == '}' && brace_count == 0 && bracket_count == 0 && !in_string {
-                value_end = i + 1;
-                break;
             }
         }
 
