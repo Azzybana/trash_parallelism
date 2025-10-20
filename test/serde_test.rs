@@ -224,6 +224,146 @@ pub fn test_extract_json_value() {
 }
 
 #[test]
+pub fn test_serialize_to_writer() {
+    #[derive(Serialize, Deserialize, Debug, PartialEq)]
+    struct TestStruct {
+        name: String,
+        value: i32,
+    }
+
+    let data = TestStruct {
+        name: "test".to_string(),
+        value: 42,
+    };
+
+    let mut buffer = Vec::new();
+    serialize_to_writer(&mut buffer, &data).unwrap();
+
+    let json = String::from_utf8(buffer).unwrap();
+    assert!(json.contains("test"));
+    assert!(json.contains("42"));
+}
+
+#[test]
+pub fn test_deserialize_from_reader() {
+    use std::io::Cursor;
+
+    #[derive(Serialize, Deserialize, Debug, PartialEq)]
+    struct TestStruct {
+        name: String,
+        value: i32,
+    }
+
+    let json = r#"{"name":"test","value":42}"#;
+    let reader = Cursor::new(json.as_bytes());
+    let data: TestStruct = deserialize_from_reader(reader).unwrap();
+    assert_eq!(data.name, "test");
+    assert_eq!(data.value, 42);
+}
+
+#[test]
+pub fn test_serialize_pretty_to_writer() {
+    #[derive(Serialize)]
+    struct TestStruct {
+        name: String,
+        value: i32,
+    }
+
+    let data = TestStruct {
+        name: "test".to_string(),
+        value: 42,
+    };
+
+    let mut buffer = Vec::new();
+    serialize_pretty_to_writer(&mut buffer, &data).unwrap();
+
+    let json = String::from_utf8(buffer).unwrap();
+    assert!(json.contains('\n'));
+    assert!(json.contains("test"));
+    assert!(json.contains("42"));
+}
+
+#[test]
+pub fn test_serialize_to_file_async() {
+    use std::fs;
+
+    #[derive(Serialize, Deserialize, Debug, PartialEq)]
+    struct TestStruct {
+        name: String,
+        value: i32,
+    }
+
+    let data = TestStruct {
+        name: "test".to_string(),
+        value: 42,
+    };
+
+    let mut path = std::env::temp_dir();
+    path.push("test_async.json");
+
+    smol::block_on(async {
+        serialize_to_file_async(&data, path.to_str().unwrap())
+            .await
+            .unwrap();
+    });
+
+    let contents = fs::read_to_string(&path).unwrap();
+    assert!(contents.contains("test"));
+    assert!(contents.contains("42"));
+
+    fs::remove_file(&path).unwrap();
+}
+
+#[test]
+pub fn test_deserialize_from_file_async() {
+    use std::fs;
+
+    #[derive(Serialize, Deserialize, Debug, PartialEq)]
+    struct TestStruct {
+        name: String,
+        value: i32,
+    }
+
+    let data = TestStruct {
+        name: "test".to_string(),
+        value: 42,
+    };
+
+    let mut path = std::env::temp_dir();
+    path.push("test_async_read.json");
+    let json = serde_json::to_string(&data).unwrap();
+    fs::write(&path, json).unwrap();
+
+    let loaded: TestStruct = smol::block_on(async {
+        deserialize_from_file_async(path.to_str().unwrap())
+            .await
+            .unwrap()
+    });
+
+    assert_eq!(loaded, data);
+
+    fs::remove_file(&path).unwrap();
+}
+
+#[test]
+pub fn test_serialize_with_logging() {
+    #[derive(Serialize)]
+    struct TestStruct {
+        name: String,
+        value: i32,
+    }
+
+    let data = TestStruct {
+        name: "test".to_string(),
+        value: 42,
+    };
+
+    let json = serialize_with_logging(&data, "Test logging").unwrap();
+    assert!(json.contains("test"));
+    assert!(json.contains("42"));
+}
+
+#[test]
 #[should_panic(expected = "called `Result::unwrap()` on an `Err` value")]
 fn test_deserialize_from_json_invalid() {
     let _ = deserialize_from_json::<serde_json::Value>("invalid json").unwrap();
@@ -252,4 +392,10 @@ pub fn test_serde() {
     test_deserialize_with_timestamp();
     test_json_contains_key();
     test_extract_json_value();
+    test_serialize_to_writer();
+    test_deserialize_from_reader();
+    test_serialize_pretty_to_writer();
+    test_serialize_to_file_async();
+    test_deserialize_from_file_async();
+    test_serialize_with_logging();
 }
