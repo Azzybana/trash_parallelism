@@ -1,3 +1,22 @@
+/// Channel multiplexing and processing utilities.
+///
+/// This module provides tools for routing messages to different channels based on type,
+/// processing messages asynchronously with error handling, and creating complex channel topologies.
+///
+/// # Examples
+///
+/// Basic multiplexing:
+/// ```rust
+/// use trash_utilities::channels::{core::bounded_queue_3, multiplexor::ChannelMultiplexer};
+/// use smol;
+///
+/// # smol::block_on(async {
+/// let multiplexer = ChannelMultiplexer::new();
+/// let (tx, _) = bounded_queue_3::<String>(10);
+/// multiplexer.register_route("text", tx);
+/// multiplexer.route_message("text", "hello".to_string()).await.unwrap();
+/// # });
+/// ```
 // Standard library imports
 use std::sync::Arc;
 
@@ -15,12 +34,44 @@ pub type ProcessorFn<T> = dyn Fn(
     + 'static;
 
 /// Channel multiplexer for routing messages based on type (non-blocking)
+///
+/// Routes messages to different channels based on route names, enabling complex
+/// message distribution patterns.
+///
+/// # Examples
+///
+/// ```rust
+/// use trash_utilities::channels::{core::bounded_queue_3, multiplexor::ChannelMultiplexer};
+/// use smol;
+///
+/// # smol::block_on(async {
+/// let multiplexer = ChannelMultiplexer::new();
+/// let (tx1, _) = bounded_queue_3::<String>(10);
+/// let (tx2, _) = bounded_queue_3::<i32>(10);
+/// multiplexer.register_route("strings", tx1);
+/// multiplexer.register_route("numbers", tx2);
+/// multiplexer.route_message("strings", "hello".to_string()).await.unwrap();
+/// multiplexer.route_message("numbers", 42).await.unwrap();
+/// # });
+/// ```
 pub struct ChannelMultiplexer {
     routes: Mutex<AHashMap<String, Box<dyn std::any::Any + Send + Sync>>>,
 }
 
 impl ChannelMultiplexer {
     /// Create a new multiplexer
+    ///
+    /// # Returns
+    ///
+    /// A new `ChannelMultiplexer` instance.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::channels::multiplexor::ChannelMultiplexer;
+    ///
+    /// let multiplexer = ChannelMultiplexer::new();
+    /// ```
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -29,6 +80,27 @@ impl ChannelMultiplexer {
     }
 
     /// Register a route for a message type
+    ///
+    /// Associates a route name with a channel sender for routing messages.
+    ///
+    /// # Parameters
+    ///
+    /// * `route_name` - The name to identify this route.
+    /// * `sender` - The channel sender to route messages to.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - The type of messages this route handles.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::channels::{core::bounded_queue_3, multiplexor::ChannelMultiplexer};
+    ///
+    /// let multiplexer = ChannelMultiplexer::new();
+    /// let (tx, _) = bounded_queue_3::<String>(10);
+    /// multiplexer.register_route("messages", tx);
+    /// ```
     pub fn register_route<T: Send + 'static>(
         &self,
         route_name: &str,
@@ -41,9 +113,34 @@ impl ChannelMultiplexer {
 
     /// Route a message to the appropriate channel (async)
     ///
+    /// Sends the message to the channel registered for the given route name.
+    ///
+    /// # Parameters
+    ///
+    /// * `route_name` - The route to send the message through.
+    /// * `message` - The message to send.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - The type of the message.
+    ///
     /// # Errors
     ///
     /// Returns an error if no route is found for the route name, or if the channel is closed or full.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::channels::{core::bounded_queue_3, multiplexor::ChannelMultiplexer};
+    /// use smol;
+    ///
+    /// # smol::block_on(async {
+    /// let multiplexer = ChannelMultiplexer::new();
+    /// let (tx, _) = bounded_queue_3::<String>(10);
+    /// multiplexer.register_route("chat", tx);
+    /// multiplexer.route_message("chat", "Hello, world!".to_string()).await.unwrap();
+    /// # });
+    /// ```
     #[allow(clippy::await_holding_lock)]
     pub async fn route_message<T: Send + 'static + Clone>(
         &self,
@@ -68,6 +165,34 @@ impl Default for ChannelMultiplexer {
 }
 
 /// Async channel processor with error handling (non-blocking)
+///
+/// Processes messages from a channel asynchronously, with optional error handling.
+/// Each message is processed in a separate task for high throughput.
+///
+/// # Type Parameters
+///
+/// * `T` - The type of messages to process.
+/// * `F` - The type of the processing function.
+///
+/// # Examples
+///
+/// ```rust
+/// use trash_utilities::channels::{core::bounded_queue_3, multiplexor::create_async_processor};
+/// use smol;
+///
+/// # smol::block_on(async {
+/// let (tx, rx) = bounded_queue_3::<String>(10);
+/// let processor = create_async_processor(rx, |msg: String| {
+///     Box::pin(async move {
+///         println!("Processing: {}", msg);
+///         Ok(())
+///     })
+/// });
+/// processor.start();
+/// tx.send("test message".to_string()).await.unwrap();
+/// smol::Timer::after(std::time::Duration::from_millis(100)).await; // Allow processing
+/// # });
+/// ```
 #[allow(clippy::type_complexity)]
 pub struct AsyncChannelProcessor<T, F>
 where
@@ -91,6 +216,29 @@ where
         + 'static,
 {
     /// Create a new processor
+    ///
+    /// # Parameters
+    ///
+    /// * `receiver` - The channel receiver to read messages from.
+    /// * `processor` - Function to process each message.
+    ///
+    /// # Returns
+    ///
+    /// A new `AsyncChannelProcessor` instance.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::channels::{core::bounded_queue_3, multiplexor::AsyncChannelProcessor};
+    ///
+    /// let (tx, rx) = bounded_queue_3::<i32>(10);
+    /// let processor = AsyncChannelProcessor::new(rx, |num: i32| {
+    ///     Box::pin(async move {
+    ///         println!("Processed: {}", num);
+    ///         Ok(())
+    ///     })
+    /// });
+    /// ```
     pub fn new(receiver: crate::channels::core::RxFuture<T>, processor: F) -> Self {
         Self {
             receiver,
@@ -100,6 +248,28 @@ where
     }
 
     /// Set error handler
+    ///
+    /// Configures a function to handle processing errors.
+    ///
+    /// # Parameters
+    ///
+    /// * `handler` - Function called when processing fails.
+    ///
+    /// # Returns
+    ///
+    /// The processor instance for chaining.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::channels::{core::bounded_queue_3, multiplexor::AsyncChannelProcessor};
+    ///
+    /// let (tx, rx) = bounded_queue_3::<String>(10);
+    /// let processor = AsyncChannelProcessor::new(rx, |msg: String| {
+    ///         Box::pin(async move { Ok(()) })
+    ///     })
+    ///     .with_error_handler(|err| eprintln!("Processing error: {}", err));
+    /// ```
     #[must_use]
     pub fn with_error_handler(
         mut self,
@@ -110,6 +280,24 @@ where
     }
 
     /// Start processing messages (spawns non-blocking task)
+    ///
+    /// Begins processing messages in the background. Each message is handled in a separate task.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::channels::{core::bounded_queue_3, multiplexor::AsyncChannelProcessor};
+    /// use smol;
+    ///
+    /// # smol::block_on(async {
+    /// let (tx, rx) = bounded_queue_3::<String>(10);
+    /// let processor = AsyncChannelProcessor::new(rx, |msg: String| {
+    ///     Box::pin(async move { Ok(()) })
+    /// });
+    /// processor.start();
+    /// tx.send("start processing".to_string()).await.unwrap();
+    /// # });
+    /// ```
     pub fn start(self) {
         let receiver = self.receiver.clone();
         let processor = Arc::new(self.processor);
@@ -132,6 +320,36 @@ where
 }
 
 /// Create an async channel processor
+///
+/// Convenience function to create a processor with a receiver and processing function.
+///
+/// # Parameters
+///
+/// * `receiver` - The channel receiver.
+/// * `processor` - The message processing function.
+///
+/// # Type Parameters
+///
+/// * `T` - Message type.
+/// * `F` - Processor function type.
+///
+/// # Returns
+///
+/// A new `AsyncChannelProcessor` instance.
+///
+/// # Examples
+///
+/// ```rust
+/// use trash_utilities::channels::{core::bounded_queue_3, multiplexor::create_async_processor};
+///
+/// let (tx, rx) = bounded_queue_3::<i32>(10);
+/// let processor = create_async_processor(rx, |num: i32| {
+///     Box::pin(async move {
+///         println!("Number: {}", num);
+///         Ok(())
+///     })
+/// });
+/// ```
 pub fn create_async_processor<T, F>(
     receiver: crate::channels::core::RxFuture<T>,
     processor: F,
