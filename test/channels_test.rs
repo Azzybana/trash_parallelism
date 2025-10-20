@@ -682,57 +682,56 @@ pub fn test_create_async_processor() {
 }
 
 #[test]
-pub fn test_channels() {
-    test_bounded_queue_3();
-    test_create_bounded_channel();
-    test_create_unbounded_channel();
-    test_message_new_and_verify();
-    test_send_async_and_recv_async();
-    test_send_json_message_and_recv_json_message();
-    test_broadcast_message();
-    test_benchmark_channel();
-    test_monitored_channel();
-    test_monitored_channel_send_recv();
-    test_monitored_channel_builder();
-    test_channel_stats_to_json();
-    test_channel_multiplexer();
-    test_channel_multiplexer_route();
-    test_async_channel_processor();
-    test_parallel_channel_processor();
-    test_parallel_channel_processor_multiple_receivers();
-    test_parallel_channel_processor_creation();
-    test_create_async_processor();
-    test_work_queue();
-    test_work_queue_submit();
-    test_work_queue_multiple_workers();
-    test_work_queue_round_robin();
-    test_base64_channel();
-    test_base64_channel_send_recv();
-    test_compressed_channel();
-    test_compressed_channel_send_recv();
-    test_compressed_channel_with_config();
-    test_compressed_channel_builder();
-    test_file_backed_channel();
-    test_file_backed_channel_send();
-    test_file_backed_channel_overflow();
-    test_file_backed_channel_flush_to_memory();
-    test_file_backed_channel_multiple_sends();
-    test_rate_limited_channel();
-    test_rate_limited_channel_send();
-    test_rate_limited_channel_within_limit();
-    test_rate_limited_channel_exceed_limit();
-    test_rate_limited_channel_refill();
-    test_priority_channel();
-    test_priority_channel_send_recv();
-    test_fast_message_parser();
-    test_fast_message_parser_json();
-    test_channel_aggregator();
-    test_batching_channel();
-    test_batching_channel_send();
-    test_filtered_channel();
-    test_filtered_channel_send();
-    test_persistent_channel();
-    test_persistent_channel_send_persistent();
-    test_persistent_channel_recover_messages();
-    test_persistent_channel_file_operations();
+pub fn test_persistent_channel_recover_messages_file_not_found() {
+    // Test recovering from non-existent file
+    let result: Result<Vec<String>, Box<dyn std::error::Error>> = 
+        specialist::PersistentChannel::<String>::recover_messages("non_existent_file.log");
+    assert!(result.is_err());
+}
+
+#[test]
+pub fn test_parallel_channel_processor_empty_receivers() {
+    let receivers: Vec<smol::channel::Receiver<i32>> = vec![];
+    let processor = specialist::ParallelChannelProcessor::new(receivers, |x| x * 2);
+    // Should handle empty receivers gracefully
+    processor.start();
+}
+
+#[test]
+pub fn test_rate_limited_channel_zero_tokens() {
+    smol::block_on(async {
+        let channel: specialist::RateLimitedChannel<String> =
+            specialist::RateLimitedChannel::new(10, 0.0, 1.0); // 0 tokens
+        // Should fail immediately
+        let result = channel.send("msg".to_string()).await;
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().to_string(), "Rate limit exceeded");
+    });
+}
+
+#[test]
+pub fn test_priority_channel_capacity() {
+    smol::block_on(async {
+        let channel: specialist::PriorityChannel<String> = specialist::PriorityChannel::new(1);
+        
+        // Fill all priority queues
+        channel.send_high("high1".to_string()).await.unwrap();
+        channel.send_normal("normal1".to_string()).await.unwrap();
+        channel.send_low("low1".to_string()).await.unwrap();
+        
+        // High priority should still be received first
+        let received = channel.recv().await.unwrap();
+        assert_eq!(received, "high1");
+    });
+}
+
+#[test]
+pub fn test_compressed_channel_large_data() {
+    smol::block_on(async {
+        let channel = specialist::CompressedChannel::new();
+        let large_data = "A".repeat(10000); // 10KB of data
+        channel.send_compressed(&large_data).await.unwrap();
+        let received: String = channel.recv_decompressed().await.unwrap();
+        assert_eq!(received, large_data);
+    });
 }

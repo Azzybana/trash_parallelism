@@ -23,7 +23,6 @@ mod sys_test;
 #[cfg(test)]
 fn run_all_tests() {
     async_test::test_async();
-    channels_test::test_channels();
     common_test::test_common();
     data_test::test_data();
     io_test::test_io();

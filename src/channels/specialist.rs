@@ -687,6 +687,7 @@ impl<T: Serialize + for<'de> Deserialize<'de> + Send + 'static> Default for File
 /// ```
 pub struct RateLimitedChannel<T> {
     tx: crate::channels::core::TxFuture<T>,
+    #[allow(dead_code)]
     rx: crate::channels::core::RxFuture<T>,
     rate_limiter: Arc<Mutex<RateLimiter>>,
 }
@@ -885,7 +886,8 @@ impl<T: Send + 'static, F: Fn(T) -> R + Send + Sync + 'static, R: Send + 'static
 {
     /// Create a new parallel processor
     pub fn new(receivers: Vec<crate::channels::core::RxFuture<T>>, processor: F) -> Self {
-        let (results_tx, _) = crate::channels::core::bounded_queue_3(receivers.len() * 10);
+        let capacity = (receivers.len() * 10).max(1); // Ensure minimum capacity of 1
+        let (results_tx, _) = crate::channels::core::bounded_queue_3(capacity);
         Self {
             receivers,
             processor: Arc::new(processor),
