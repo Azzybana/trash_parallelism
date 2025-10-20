@@ -1,4 +1,5 @@
 //! Tests for the memory module
+use base64::{Engine, engine::general_purpose::STANDARD};
 use trash_parallelism::memory::*;
 
 #[test]
@@ -413,6 +414,135 @@ pub fn test_enhanced_memory_manager_parallel_processor() {
 
     let logger = manager.logger();
     assert!(logger.is_empty());
+}
+
+#[test]
+pub fn test_memory_stats_default() {
+    let stats = MemoryStats::default();
+    assert_eq!(stats.allocated_bytes, 0);
+    assert_eq!(stats.peak_allocated_bytes, 0);
+    assert_eq!(stats.total_allocated_bytes, 0);
+    assert_eq!(stats.allocation_count, 0);
+    assert_eq!(stats.deallocation_count, 0);
+    assert!((stats.fragmentation_ratio - 0.0).abs() < f64::EPSILON);
+    assert_eq!(stats.heap_size, 0);
+}
+
+#[test]
+pub fn test_allocation_stats() {
+    let stats = AllocationStats {
+        total_size: 2048,
+        count: 4,
+        avg_size: 512,
+        rate: 2.5,
+    };
+    assert_eq!(stats.total_size, 2048);
+    assert_eq!(stats.count, 4);
+    assert_eq!(stats.avg_size, 512);
+    assert!((stats.rate - 2.5).abs() < f64::EPSILON);
+}
+
+#[test]
+pub fn test_memory_event_and_type() {
+    use chrono::Utc;
+    let timestamp = Utc::now();
+    let event = MemoryEvent {
+        timestamp,
+        event_type: MemoryEventType::Allocation,
+        size: 1024,
+        pool_name: Some("test_pool".to_string()),
+        details: "Test allocation".to_string(),
+    };
+    assert_eq!(event.size, 1024);
+    assert_eq!(event.pool_name, Some("test_pool".to_string()));
+    assert_eq!(event.details, "Test allocation");
+    assert!(matches!(event.event_type, MemoryEventType::Allocation));
+}
+
+#[test]
+pub fn test_global_memory_manager() {
+    let manager1 = global_memory_manager();
+    let manager2 = global_memory_manager();
+    // Should be the same instance
+    assert!(std::sync::Arc::ptr_eq(&manager1, &manager2));
+}
+
+#[test]
+pub fn test_init_memory_management() {
+    // Test with None
+    init_memory_management(None);
+    // Should not panic
+
+    // Test with Some duration
+    init_memory_management(Some(Duration::from_millis(100)));
+    // Should start monitoring, but hard to test the thread
+}
+
+#[test]
+pub fn test_enhanced_memory_manager_default() {
+    let manager = EnhancedMemoryManager::default();
+    // Default calls new(4)
+    assert_eq!(manager.parallel_processor().active_threads(), 0);
+    assert!(manager.logger().is_empty());
+}
+
+#[test]
+pub fn test_memory_manager_clone() {
+    let manager = MemoryManager::new();
+    let config = default_pool_config("test");
+    let _pool = manager.create_pool(&config);
+    assert_eq!(manager.list_pools(), vec!["test"]);
+
+    let cloned = manager.clone();
+    // Clone creates a new manager with empty pools
+    assert!(cloned.list_pools().is_empty());
+}
+
+#[test]
+pub fn test_memory_snapshot_import_invalid() {
+    // Test importing invalid base64
+    let result = MemorySnapshot::import_base64("invalid_base64");
+    assert!(result.is_err());
+
+    // Test importing valid base64 but invalid JSON
+    let invalid_json = STANDARD.encode(b"not json");
+    let result = MemorySnapshot::import_base64(&invalid_json);
+    assert!(result.is_err());
+}
+
+#[test]
+pub fn test_memory_event_logger_max_events() {
+    let logger = MemoryEventLogger::new(3);
+
+    // Log 5 events
+    for i in 0..5 {
+        logger.log_event(
+            MemoryEventType::Allocation,
+            1024 + i,
+            Some(&format!("pool_{i}")),
+            &format!("Event {i}"),
+        );
+    }
+
+    // Should only have 3 events, the last 3
+    assert_eq!(logger.len(), 3);
+    let events = logger.recent_events(10);
+    assert_eq!(events.len(), 3);
+    assert_eq!(events[0].size, 1024 + 2); // First is the oldest remaining
+    assert_eq!(events[2].size, 1024 + 4); // Last is the newest
+}
+
+#[test]
+pub fn test_memory_report_output() {
+    let manager = MemoryManager::new();
+    let config = default_pool_config("report_test");
+    let _pool = manager.create_pool(&config);
+
+    let report = manager.memory_report();
+    assert!(report.contains("Memory Report"));
+    assert!(report.contains("Global Stats"));
+    assert!(report.contains("report_test"));
+    assert!(report.contains("bytes allocated"));
 }
 
 #[test]
