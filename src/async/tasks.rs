@@ -104,8 +104,8 @@ impl AsyncTaskSpawner {
     /// Spawn an async task (non-blocking).
     ///
     /// The task will be executed asynchronously using the smol runtime.
-    /// If the spawner's cancellation token is cancelled before the task starts,
-    /// the task will not execute.
+    /// If the spawner's cancellation token is cancelled before spawning,
+    /// the task will not be spawned.
     ///
     /// # Parameters
     ///
@@ -135,11 +135,12 @@ impl AsyncTaskSpawner {
         F: FnOnce() -> Fut + Send + 'static,
         Fut: std::future::Future<Output = ()> + Send + 'static,
     {
-        let token = self.token.clone();
+        if self.token.is_cancelled() {
+            return;
+        }
+
         let handle = smol::spawn(async move {
-            if !token.is_cancelled() {
-                task().await;
-            }
+            task().await;
         });
 
         self.handles.lock().push(handle);
@@ -366,7 +367,7 @@ impl AsyncTaskGroup {
     /// Add a task to the group (non-blocking).
     ///
     /// The task will be executed asynchronously. If the group's cancellation
-    /// token is cancelled, the task may not start.
+    /// token is cancelled before adding, the task will not be added.
     ///
     /// # Parameters
     ///
@@ -396,11 +397,12 @@ impl AsyncTaskGroup {
         F: FnOnce() -> Fut + Send + 'static,
         Fut: std::future::Future<Output = ()> + Send + 'static,
     {
-        let token = self.token.clone();
+        if self.token.is_cancelled() {
+            return;
+        }
+
         let task_handle = smol::spawn(async move {
-            if !token.is_cancelled() {
-                task().await;
-            }
+            task().await;
         });
 
         self.tasks.lock().push(task_handle);
