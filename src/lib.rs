@@ -64,9 +64,6 @@
 #![doc(html_logo_url = "https://avatars.githubusercontent.com/u/121582001?v=4&size=64")]
 #![doc(html_playground_url = "https://play.rust-lang.org/")]
 
-/// The dynamic version of the crate, computed from commit count during build.
-pub const VERSION: &str = env!("DYNAMIC_VERSION");
-
 pub mod r#async;
 pub mod channels;
 pub mod chars;

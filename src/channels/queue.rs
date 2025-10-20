@@ -17,8 +17,8 @@
 /// // Workers process tasks, results available via collect()
 /// # });
 /// ```
+///
 // Standard library imports
-
 // External crate imports
 use parking_lot::Mutex;
 
