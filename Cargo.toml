@@ -1,10 +1,10 @@
 [package]
-    name = "trash_utilities"
-    version = "0.1.0"
+    name = "trash_parallels"
+    version = "0.1.22"
     edition = "2024"
     resolver = "3"
     rust-version = "1.92"
-    description = "Azzybana Raccoon's comprehensive async, threading, memory management, and utility functions"
+    description = "Azzybana Raccoon's comprehensive parallelism library."
     authors = ["Azzybana Raccoon"]
     license = "Apache-2.0"
     readme = "README.md"

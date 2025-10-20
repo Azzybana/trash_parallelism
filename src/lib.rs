@@ -62,6 +62,9 @@
 //! - `current_utc_time`, `read_env_var` from sys
 //! - `parallel_map`, `parallel_for_each` from threads
 
+/// The dynamic version of the crate, computed from commit count during build.
+pub const VERSION: &str = env!("DYNAMIC_VERSION");
+
 pub mod r#async;
 pub mod channels;
 pub mod chars;
