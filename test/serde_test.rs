@@ -311,8 +311,10 @@ pub fn test_serialize_to_file_async() {
     // Parse JSON and assert fields to avoid fragile string matching across
     // platforms and serialization ordering.
     let parsed: serde_json::Value = serde_json::from_str(&contents).unwrap();
-    assert_eq!(parsed["name"], "test");
-    assert_eq!(parsed["value"], 42);
+    assert_eq!(parsed["name"].as_str().unwrap(), "test");
+    assert_eq!(parsed["value"].as_i64().unwrap(), 42);
+
+
 
     fs::remove_file(&path).unwrap();
 }
