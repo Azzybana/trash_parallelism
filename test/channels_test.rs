@@ -1,5 +1,5 @@
 //! Tests for the channels module
-use trash_utilities::channels::*;
+use trash_parallelism::channels::*;
 
 #[test]
 pub fn test_bounded_queue_3() {

@@ -1,5 +1,5 @@
 //! Tests for the parallel module
-use trash_utilities::parallel::*;
+use trash_parallelism::parallel::*;
 
 #[test]
 pub fn test_parallel_map() {
@@ -54,23 +54,17 @@ pub fn test_parallel_group_by() {
 pub fn test_parallel_chunks() {
     let data = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     let chunks = parallel_chunks(data, 3);
-    assert_eq!(chunks, vec![
-        vec![1, 2, 3],
-        vec![4, 5, 6],
-        vec![7, 8, 9],
-        vec![10]
-    ]);
+    assert_eq!(
+        chunks,
+        vec![vec![1, 2, 3], vec![4, 5, 6], vec![7, 8, 9], vec![10]]
+    );
 }
 
 #[test]
 pub fn test_parallel_windows() {
     let data = vec![1, 2, 3, 4, 5];
     let windows = parallel_windows(&data, 3);
-    assert_eq!(windows, vec![
-        vec![1, 2, 3],
-        vec![2, 3, 4],
-        vec![3, 4, 5]
-    ]);
+    assert_eq!(windows, vec![vec![1, 2, 3], vec![2, 3, 4], vec![3, 4, 5]]);
 }
 
 #[test]

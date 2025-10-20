@@ -1,5 +1,5 @@
 //! Tests for the io module
-use trash_utilities::io::*;
+use trash_parallelism::io::*;
 
 #[test]
 pub fn test_read_file_async() {

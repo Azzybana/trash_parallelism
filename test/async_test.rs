@@ -1,5 +1,5 @@
 //! Tests for the async module
-use trash_utilities::r#async::*;
+use trash_parallelism::r#async::*;
 
 #[test]
 pub fn test_sleep_for() {

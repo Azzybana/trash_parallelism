@@ -1,10 +1,12 @@
 [build]
     rustdocflags = ["--default-theme", "trash", "--theme", "doc/trash.css"]
 
-[env]
+[profile.test]
+    runner-args = ["--ensure-time", "--report-time"]
+
+[profile.test.env]
     RUST_TEST_TIME_UNIT = "2000,6000"
     RUST_TEST_TIME_INTEGRATION = "2000,6000"
     RUST_TEST_TIME_DOCTEST = "2000,6000"
-
-[profile.test]
-    runner-args = ["--ensure-time", "--report-time"]
+    RUSTFLAGS = "-Cinstrument-coverage -Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
+    LLVM_PROFILE_FILE = "trash_parallelism-%p-%m.profraw"

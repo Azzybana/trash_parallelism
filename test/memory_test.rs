@@ -1,5 +1,5 @@
 //! Tests for the memory module
-use trash_utilities::memory::*;
+use trash_parallelism::memory::*;
 
 #[test]
 pub fn test_calc_ratio() {

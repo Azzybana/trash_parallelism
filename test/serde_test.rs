@@ -1,6 +1,6 @@
 //! Tests for the serde module
 use serde::{Deserialize, Serialize};
-use trash_utilities::serde::*;
+use trash_parallelism::serde::*;
 
 #[test]
 pub fn test_serialize_to_json() {

@@ -1,5 +1,5 @@
 [package]
-    name = "trash_parallels"
+    name = "trash_parallelism"
     version = "0.1.25"
     edition = "2024"
     resolver = "3"
@@ -19,12 +19,12 @@
     publish = false
 
 [lib]
-    name = "trash_utilities"
+    name = "trash_parallelism"
     path = "src/lib.rs"
     crate-type = ["rlib"]
 
 [[bin]]
-    name = "test"
+    name = "test_trash_parallelism"
     path = "test/test.rs"
 
 [dependencies]

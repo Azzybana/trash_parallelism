@@ -1,6 +1,6 @@
 //! Tests for the sys module
 use chrono::Datelike;
-use trash_utilities::sys::*;
+use trash_parallelism::sys::*;
 
 #[test]
 pub fn test_timer_creation() {

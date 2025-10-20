@@ -1,5 +1,5 @@
 //! Tests for the chars module
-use trash_utilities::chars::*;
+use trash_parallelism::chars::*;
 
 #[test]
 pub fn test_find_byte() {

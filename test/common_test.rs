@@ -1,6 +1,6 @@
 //! Tests for the common module
 use chrono::Datelike;
-use trash_utilities::common::*;
+use trash_parallelism::common::*;
 
 #[test]
 pub fn test_create_ahash_map() {

@@ -1,5 +1,5 @@
 //! Tests for the data module
-use trash_utilities::data::*;
+use trash_parallelism::data::*;
 
 #[test]
 pub fn test_parse_key_value_basic() {
