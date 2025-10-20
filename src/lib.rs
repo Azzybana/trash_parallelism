@@ -1,11 +1,11 @@
-//! # Trash Utilities
+//! # Trash Parallelism
 //!
 //! A high-performance Rust library providing comprehensive async, threading,
 //! memory management, and utility functions for building efficient applications.
 //!
 //! ## Overview
 //!
-//! Trash Utilities is a batteries-included Rust library designed for high-performance
+//! Trash Parallelism is a batteries-included Rust library designed for high-performance
 //! applications requiring efficient async operations, parallel processing, memory management,
 //! and system-level utilities. Built with performance and ergonomics in mind.
 //!
@@ -134,11 +134,6 @@
 //! - **[`sys`]**: System utilities (time, env vars, filesystem)
 //! - **[`common`]**: Shared utilities across modules
 //!
-//! ### Development Tools
-//! - **`logging`**: Structured logging (not shown in docs)
-//! - **`macros`**: Ergonomic macros (not shown in docs)
-//! - **`utils`**: Additional utilities (not shown in docs)
-//!
 //! ## Performance Characteristics
 //!
 //! - **Zero-Copy Operations**: Where possible, avoids unnecessary allocations
@@ -154,27 +149,8 @@
 //! - **Error Handling**: Comprehensive error propagation with context
 //! - **Resource Management**: Automatic cleanup and RAII patterns
 //! - **Testing**: Extensive test coverage for reliability
-//!
-//! ## Platform Support
-//!
-//! - **Linux**: Full support with optimized system calls
-//! - **macOS**: Full support with native optimizations
-//! - **Windows**: Full support with Windows-specific implementations
-//! - **Cross-Platform**: Consistent API across all platforms
-//!
-//! ## Contributing
-//!
-//! Contributions are welcome! Please see the repository for:
-//! - Development setup and guidelines
-//! - Code style and conventions
-//! - Testing requirements
-//! - Performance benchmarking
-//!
-//! ## License
-//!
-//! This project is licensed under the MIT License - see the LICENSE file for details.
 
-#![doc(html_logo_url = "https://avatars.githubusercontent.com/u/121582001?v=4&size=64")]
+#![doc(html_logo_url = "../../../doc/logo.png")]
 #![doc(html_playground_url = "https://play.rust-lang.org/")]
 
 pub mod r#async;

@@ -24,7 +24,6 @@ mod sys_test;
 fn run_all_tests() {
     async_test::test_async();
     channels_test::test_channels();
-    chars_test::test_chars();
     common_test::test_common();
     data_test::test_data();
     io_test::test_io();

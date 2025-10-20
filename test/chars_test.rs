@@ -204,23 +204,3 @@ pub fn test_extract_json_values_by_key() {
 fn test_extract_json_values_by_key_invalid() {
     let _ = processing::extract_json_values_by_key("invalid json", "key").unwrap();
 }
-
-#[test]
-pub fn test_chars() {
-    test_find_byte();
-    test_find_byte_all();
-    test_find_any_byte();
-    test_hash_string_fast();
-    test_encode_string_base64();
-    test_decode_string_base64();
-    test_hash_and_encode_base64();
-    test_split_string_efficient();
-    test_count_substring();
-    test_deduplicate_lines();
-    test_string_interner();
-    test_efficient_string_builder();
-    test_parse_and_validate_json();
-    test_parse_and_validate_json_invalid();
-    test_parallel_process_string();
-    test_extract_json_values_by_key();
-}

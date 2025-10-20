@@ -334,6 +334,7 @@ impl MemorySnapshot {
     /// Create a new memory snapshot
     #[must_use]
     pub fn new(manager: &MemoryManager) -> Self {
+        let timestamp = Utc::now();
         let stats = manager.global_stats();
         let pools = manager
             .list_pools()
@@ -345,13 +346,13 @@ impl MemorySnapshot {
             })
             .collect();
 
-        let checksum_data = format!("{:?}{:?}{:?}", stats, pools, Utc::now());
+        let checksum_data = format!("{stats:?}{pools:?}{timestamp:?}");
         let mut hasher = AHasher::default();
         std::hash::Hasher::write(&mut hasher, checksum_data.as_bytes());
         let checksum = hasher.finish();
 
         Self {
-            timestamp: Utc::now(),
+            timestamp,
             stats: (*stats).clone(),
             pools,
             checksum,

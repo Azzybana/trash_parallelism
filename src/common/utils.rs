@@ -93,7 +93,7 @@ pub fn current_utc_time() -> DateTime<Utc> {
 /// ```
 #[must_use]
 pub fn format_datetime(dt: &DateTime<Utc>) -> String {
-    dt.to_rfc3339()
+    dt.format("%Y-%m-%dT%H:%M:%S%.fZ").to_string()
 }
 
 /// Parses a date/time string in RFC 3339 format.

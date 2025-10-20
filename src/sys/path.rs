@@ -317,10 +317,14 @@ pub fn get_file_extension(path: &str) -> Option<String> {
 /// ```
 #[must_use]
 pub fn get_file_stem(path: &str) -> Option<String> {
-    Path::new(path)
-        .file_stem()
-        .and_then(|s| s.to_str())
-        .map(std::string::ToString::to_string)
+    if path.ends_with('/') {
+        None
+    } else {
+        Path::new(path)
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .map(std::string::ToString::to_string)
+    }
 }
 
 /// Gets file metadata synchronously.

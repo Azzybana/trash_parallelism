@@ -95,7 +95,7 @@ pub fn test_read_env_var_parse() {
 
 #[test]
 pub fn test_validate_required_env_vars() {
-    let result = validate_required_env_vars(&["HOME"]); // HOME should exist
+    let result = validate_required_env_vars(&["PATH"]); // PATH should exist
     assert!(result.is_ok());
 }
 
