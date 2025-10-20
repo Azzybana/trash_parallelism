@@ -46,6 +46,12 @@ pub fn test_decode_string_base64() {
 }
 
 #[test]
+#[should_panic(expected = "called `Result::unwrap()` on an `Err` value")]
+fn test_decode_string_base64_invalid() {
+    let _ = core::decode_string_base64("invalid base64!").unwrap();
+}
+
+#[test]
 pub fn test_hash_and_encode_base64() {
     let encoded_hash = core::hash_and_encode_base64("test data");
     assert!(!encoded_hash.is_empty());
@@ -157,6 +163,12 @@ pub fn test_parse_and_validate_json() {
 }
 
 #[test]
+#[should_panic(expected = "called `Result::unwrap()` on an `Err` value")]
+fn test_parse_and_validate_json_invalid() {
+    let _ = processing::parse_and_validate_json::<serde_json::Value>("invalid json").unwrap();
+}
+
+#[test]
 pub fn test_parallel_process_string() {
     let text = "The quick brown fox jumps over the lazy dog";
     let results = processing::parallel_process_string(text, 10, str::len);
@@ -192,6 +204,12 @@ pub fn test_extract_json_values_by_key() {
 }
 
 #[test]
+#[should_panic(expected = "called `Result::unwrap()` on an `Err` value")]
+fn test_extract_json_values_by_key_invalid() {
+    let _ = processing::extract_json_values_by_key("invalid json", "key").unwrap();
+}
+
+#[test]
 pub fn test_chars() {
     test_find_byte();
     test_find_byte_all();
@@ -206,6 +224,7 @@ pub fn test_chars() {
     test_string_interner();
     test_efficient_string_builder();
     test_parse_and_validate_json();
+    test_parse_and_validate_json_invalid();
     test_parallel_process_string();
     test_extract_json_values_by_key();
 }

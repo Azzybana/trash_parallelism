@@ -33,6 +33,12 @@ pub fn test_decode_base64() {
 }
 
 #[test]
+#[should_panic(expected = "called `Result::unwrap()` on an `Err` value")]
+fn test_decode_base64_invalid() {
+    let _ = crypto::decode_base64("invalid base64!").unwrap();
+}
+
+#[test]
 pub fn test_compress_brotli() {
     let data = b"This is some test data for compression that should be compressible.";
     let compressed = crypto::compress_brotli(data, 6).unwrap();
@@ -265,6 +271,12 @@ pub fn test_lru_cache() {
     assert_eq!(cache.get(&"key4"), Some("value4"));
 
     assert!(!cache.is_empty());
+}
+
+#[test]
+#[should_panic(expected = "called `Result::unwrap()` on an `Err` value")]
+fn test_parse_datetime_invalid() {
+    let _ = utils::parse_datetime("invalid datetime").unwrap();
 }
 
 #[test]

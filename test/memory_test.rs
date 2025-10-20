@@ -280,6 +280,12 @@ pub fn test_high_perf_pool_config() {
 }
 
 #[test]
+#[should_panic(expected = "called `Result::unwrap()` on an `Err` value")]
+fn test_allocate_aligned_invalid_alignment() {
+    let _ = allocate_aligned(1024, 3).unwrap();
+}
+
+#[test]
 pub fn test_memory() {
     test_calc_ratio();
     test_get_mimalloc_stats();

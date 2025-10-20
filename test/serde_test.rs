@@ -224,6 +224,18 @@ pub fn test_extract_json_value() {
 }
 
 #[test]
+#[should_panic(expected = "called `Result::unwrap()` on an `Err` value")]
+fn test_deserialize_from_json_invalid() {
+    let _ = deserialize_from_json::<serde_json::Value>("invalid json").unwrap();
+}
+
+#[test]
+#[should_panic(expected = "called `Result::unwrap()` on an `Err` value")]
+fn test_decode_base64_invalid() {
+    let _ = decode_base64("invalid base64!").unwrap();
+}
+
+#[test]
 pub fn test_serde() {
     test_serialize_to_json();
     test_deserialize_from_json();

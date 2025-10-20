@@ -32,6 +32,18 @@ pub fn test_parse_datetime() {
 }
 
 #[test]
+#[should_panic(expected = "called `Result::unwrap()` on an `Err` value")]
+fn test_parse_datetime_invalid() {
+    let _ = parse_datetime("invalid").unwrap();
+}
+
+#[test]
+#[should_panic(expected = "called `Result::unwrap()` on an `Err` value")]
+fn test_parse_date_invalid() {
+    let _ = parse_date("invalid").unwrap();
+}
+
+#[test]
 pub fn test_parse_date() {
     let date = parse_date("2023-12-25").unwrap();
     assert_eq!(date.year(), 2023);
