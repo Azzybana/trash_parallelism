@@ -158,6 +158,111 @@ pub fn test_list_directory() {
 }
 
 #[test]
+pub fn test_timer_elapsed() {
+    let timer = Timer::new("test_timer");
+    std::thread::sleep(std::time::Duration::from_millis(10));
+    let elapsed = timer.elapsed();
+    assert!(elapsed.as_millis() >= 10);
+}
+
+#[test]
+pub fn test_read_env_var() {
+    unsafe {
+        std::env::set_var("TEST_VAR", "test_value");
+    }
+    let value = read_env_var("TEST_VAR").unwrap();
+    assert_eq!(value, "test_value");
+    unsafe {
+        std::env::remove_var("TEST_VAR");
+    }
+}
+
+#[test]
+pub fn test_read_env_var_json() {
+    unsafe {
+        std::env::set_var("TEST_JSON", r#"{"key": "value"}"#);
+    }
+    let config: serde_json::Value = read_env_var_json("TEST_JSON").unwrap();
+    assert_eq!(config["key"], "value");
+    unsafe {
+        std::env::remove_var("TEST_JSON");
+    }
+}
+
+#[test]
+pub fn test_read_env_vars_parallel() {
+    unsafe {
+        std::env::set_var("TEST_VAR1", "value1");
+        std::env::set_var("TEST_VAR2", "value2");
+    }
+    let keys = vec!["TEST_VAR1", "TEST_VAR2", "NONEXISTENT"];
+    let vars = read_env_vars_parallel(&keys);
+    assert_eq!(vars.get("TEST_VAR1"), Some(&"value1".to_string()));
+    assert_eq!(vars.get("TEST_VAR2"), Some(&"value2".to_string()));
+    assert!(!vars.contains_key("NONEXISTENT"));
+    unsafe {
+        std::env::remove_var("TEST_VAR1");
+        std::env::remove_var("TEST_VAR2");
+    }
+}
+
+#[test]
+pub fn test_get_file_metadata() {
+    let metadata = get_file_metadata("Cargo.toml").unwrap();
+    assert!(metadata.is_file());
+    assert!(metadata.len() > 0);
+}
+
+#[test]
+pub fn test_get_file_modified_time() {
+    let modified = get_file_modified_time("Cargo.toml").unwrap();
+    // Just check it's a valid SystemTime, not in the future
+    assert!(modified.duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() > 0);
+}
+
+#[test]
+pub fn test_get_files_metadata_parallel() {
+    let paths = vec!["Cargo.toml", "src/lib.rs"];
+    let results = get_files_metadata_parallel(&paths);
+    assert!(results.contains_key("Cargo.toml"));
+    assert!(results["Cargo.toml"].is_ok());
+    assert!(results.contains_key("src/lib.rs"));
+    assert!(results["src/lib.rs"].is_ok());
+}
+
+#[test]
+pub fn test_serialize_file_info() {
+    let metadata = get_file_metadata("Cargo.toml").unwrap();
+    let json = serialize_file_info(&metadata).unwrap();
+    let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
+    assert!(parsed["size"].is_number());
+    assert_eq!(parsed["is_file"], true);
+}
+
+#[test]
+pub fn test_deserialize_file_info() {
+    let json = r#"{"size":1024,"is_file":true,"is_dir":false,"modified":"1234567890"}"#;
+    let info = deserialize_file_info(json).unwrap();
+    assert_eq!(info["size"], 1024);
+    assert_eq!(info["is_file"], true);
+}
+
+#[test]
+pub fn test_walk_directory() {
+    let files = walk_directory("src").unwrap();
+    assert!(!files.is_empty());
+    assert!(files.iter().any(|f| f.ends_with("lib.rs")));
+}
+
+#[test]
+#[allow(clippy::case_sensitive_file_extension_comparisons)]
+pub fn test_find_files_parallel() {
+    let rs_files = find_files_parallel("src", "rs").unwrap();
+    assert!(!rs_files.is_empty());
+    assert!(rs_files.iter().all(|f| f.ends_with(".rs")));
+}
+
+#[test]
 pub fn test_sys() {
     test_timer_creation();
     test_current_utc_time();
@@ -179,4 +284,15 @@ pub fn test_sys() {
     test_get_file_size();
     test_create_temp_file();
     test_list_directory();
+    test_timer_elapsed();
+    test_read_env_var();
+    test_read_env_var_json();
+    test_read_env_vars_parallel();
+    test_get_file_metadata();
+    test_get_file_modified_time();
+    test_get_files_metadata_parallel();
+    test_serialize_file_info();
+    test_deserialize_file_info();
+    test_walk_directory();
+    test_find_files_parallel();
 }
