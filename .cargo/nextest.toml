@@ -1,0 +1,4 @@
+[profile.default]
+    slow-timeout = { period = "1s", terminate-after = 5 }
+    leak-timeout = { period = "500ms", result = "fail" }
+    status-level = "all"

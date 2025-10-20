@@ -13,4 +13,4 @@
 !LICENSE.md
 !.gitignore
 !.cargo/
-!.cargo/config.toml
+!.cargo/**
