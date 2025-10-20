@@ -234,7 +234,7 @@ pub fn test_parallel_channel_processor_creation() {
 #[test]
 pub fn test_persistent_channel() {
     smol::block_on(async {
-        let (tx, _) = core::bounded_queue_3::<String>(5);
+        let (tx, _rx) = core::bounded_queue_3::<String>(5);
         let temp_file = tempfile::NamedTempFile::new().unwrap();
         let log_path = temp_file.path().to_str().unwrap();
         let channel = specialist::PersistentChannel::new(tx, log_path).unwrap();
@@ -271,7 +271,7 @@ pub fn test_persistent_channel_send_persistent() {
 #[test]
 pub fn test_persistent_channel_recover_messages() {
     smol::block_on(async {
-        let (tx, _) = core::bounded_queue_3::<String>(5);
+        let (tx, _rx) = core::bounded_queue_3::<String>(5);
         let temp_file = tempfile::NamedTempFile::new().unwrap();
         let log_path = temp_file.path().to_str().unwrap();
 
@@ -302,7 +302,7 @@ pub fn test_persistent_channel_file_operations() {
     smol::block_on(async {
         let temp_file = tempfile::NamedTempFile::new().unwrap();
         let log_path = temp_file.path().to_str().unwrap();
-        let (tx, _) = core::bounded_queue_3::<i32>(5);
+        let (tx, _rx) = core::bounded_queue_3::<i32>(5);
 
         let channel = specialist::PersistentChannel::new(tx, log_path).unwrap();
         for i in 0..3 {

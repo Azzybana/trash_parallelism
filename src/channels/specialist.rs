@@ -687,6 +687,7 @@ impl<T: Serialize + for<'de> Deserialize<'de> + Send + 'static> Default for File
 /// ```
 pub struct RateLimitedChannel<T> {
     tx: crate::channels::core::TxFuture<T>,
+    rx: crate::channels::core::RxFuture<T>,
     rate_limiter: Arc<Mutex<RateLimiter>>,
 }
 
@@ -729,9 +730,10 @@ impl<T: Send + 'static> RateLimitedChannel<T> {
     /// Create a new rate-limited channel
     #[must_use]
     pub fn new(capacity: usize, max_tokens: f64, refill_rate: f64) -> Self {
-        let (tx, _) = crate::channels::core::bounded_queue_3(capacity);
+        let (tx, rx) = crate::channels::core::bounded_queue_3(capacity);
         Self {
             tx,
+            rx,
             rate_limiter: Arc::new(Mutex::new(RateLimiter::new(max_tokens, refill_rate))),
         }
     }
