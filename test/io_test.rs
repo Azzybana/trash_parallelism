@@ -207,6 +207,168 @@ pub fn test_advanced_file_writer() {
 }
 
 #[test]
+pub fn test_async_file_writer_with_config() {
+    smol::block_on(async {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let path = temp_file.path().to_str().unwrap();
+
+        let mut writer = writers::AsyncFileWriter::with_config(path, 10, false).await.unwrap();
+        assert!(!writer.is_compressed());
+        assert_eq!(writer.bytes_written(), 0);
+
+        // Write data larger than buffer to trigger auto-flush
+        writer.write(b"Hello, world! This is a longer message.").await.unwrap();
+        writer.flush().await.unwrap();
+
+        assert_eq!(writer.bytes_written(), 39);
+
+        let content = std::fs::read(path).unwrap();
+        assert_eq!(content, b"Hello, world! This is a longer message.");
+    });
+}
+
+#[test]
+pub fn test_async_file_writer_write_json() {
+    smol::block_on(async {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let path = temp_file.path().to_str().unwrap();
+
+        let mut writer = writers::AsyncFileWriter::new(path).await.unwrap();
+
+        #[allow(clippy::items_after_statements)]
+        #[derive(serde::Serialize)]
+        struct TestData {
+            name: String,
+            value: i32,
+        }
+
+        let data = TestData {
+            name: "test".to_string(),
+            value: 42,
+        };
+
+        writer.write_json(&data).await.unwrap();
+        writer.flush().await.unwrap();
+
+        let content = std::fs::read_to_string(path).unwrap();
+        assert!(content.contains("\"name\":\"test\""));
+        assert!(content.contains("\"value\":42"));
+    });
+}
+
+#[test]
+pub fn test_async_file_writer_multiple_flushes() {
+    smol::block_on(async {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let path = temp_file.path().to_str().unwrap();
+
+        let mut writer = writers::AsyncFileWriter::with_config(path, 5, false).await.unwrap();
+
+        writer.write(b"Hi").await.unwrap();
+        writer.flush().await.unwrap();
+        assert_eq!(writer.bytes_written(), 2);
+
+        writer.write(b"Hello").await.unwrap();
+        writer.flush().await.unwrap();
+        assert_eq!(writer.bytes_written(), 7);
+
+        let content = std::fs::read(path).unwrap();
+        assert_eq!(content, b"HiHello");
+    });
+}
+
+#[test]
+pub fn test_streaming_file_writer_compressed() {
+    smol::block_on(async {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let path = temp_file.path().to_str().unwrap();
+
+        let mut writer = writers::StreamingFileWriter::new(path, 1024, true).await.unwrap();
+        assert_eq!(writer.chunk_size(), 1024);
+
+        writer.write_chunk(b"{\"data\": \"This is test data for compression\"}").await.unwrap();
+        assert!(writer.bytes_written() > 0); // Compressed data should be written
+
+        // Since it's compressed, we can't easily check the content, but ensure bytes were written
+        let content = std::fs::read(path).unwrap();
+        assert!(!content.is_empty());
+    });
+}
+
+#[test]
+pub fn test_streaming_file_writer_large_chunk() {
+    smol::block_on(async {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let path = temp_file.path().to_str().unwrap();
+
+        let mut writer = writers::StreamingFileWriter::new(path, 10, false).await.unwrap();
+
+        let large_data = b"This is a larger chunk of data that exceeds the chunk size setting.";
+        writer.write_chunk(large_data).await.unwrap();
+
+        assert_eq!(writer.bytes_written(), large_data.len() as u64);
+
+        let content = std::fs::read(path).unwrap();
+        assert_eq!(content, large_data);
+    });
+}
+
+#[test]
+pub fn test_advanced_file_writer_with_progress() {
+    smol::block_on(async {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let path = temp_file.path().to_str().unwrap();
+
+        let progress_count = std::sync::Arc::new(std::sync::Mutex::new(0));
+        let progress_clone = progress_count.clone();
+
+        let mut writer = writers::AdvancedFileWriter::new(
+            path,
+            5, // Small buffer
+            false,
+            Some(Box::new(move |_| {
+                let mut count = progress_clone.lock().unwrap();
+                *count += 1;
+            })),
+            false,
+        ).await.unwrap();
+
+        writer.write_with_progress(b"Hello, world! This is longer.").await.unwrap();
+        writer.flush().await.unwrap();
+
+        assert_eq!(writer.bytes_written(), 29);
+        // Progress callback should have been called multiple times due to small buffer
+        assert!(*progress_count.lock().unwrap() > 0);
+
+        let content = std::fs::read(path).unwrap();
+        assert_eq!(content, b"Hello, world! This is longer.");
+    });
+}
+
+#[test]
+pub fn test_advanced_file_writer_compressed() {
+    smol::block_on(async {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let path = temp_file.path().to_str().unwrap();
+
+        let mut writer = writers::AdvancedFileWriter::new(
+            path,
+            1024,
+            true, // compressed
+            None,
+            false,
+        ).await.unwrap();
+
+        writer.write_with_progress(b"Repeated data for compression: test test test test").await.unwrap();
+        writer.flush().await.unwrap();
+
+        assert!(writer.bytes_written() > 0);
+        let content = std::fs::read(path).unwrap();
+        assert!(!content.is_empty());
+    });
+}
+
+#[test]
 pub fn test_process_files_chunked() {
     smol::block_on(async {
         // Create temp file with test data
@@ -612,6 +774,13 @@ pub fn test_io() {
     test_async_file_writer_compressed();
     test_streaming_file_writer();
     test_advanced_file_writer();
+    test_async_file_writer_with_config();
+    test_async_file_writer_write_json();
+    test_async_file_writer_multiple_flushes();
+    test_streaming_file_writer_compressed();
+    test_streaming_file_writer_large_chunk();
+    test_advanced_file_writer_with_progress();
+    test_advanced_file_writer_compressed();
     test_async_file_processor_with_progress_callback();
     test_async_file_processor_with_progress_callback_async();
     test_async_file_processor_default();
