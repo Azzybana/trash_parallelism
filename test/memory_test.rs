@@ -3,9 +3,12 @@ use trash_utilities::memory::*;
 
 #[test]
 pub fn test_calc_ratio() {
-    assert_eq!(calc_ratio(10, 20), 0.5);
-    assert_eq!(calc_ratio(0, 10), 0.0);
-    assert_eq!(calc_ratio(5, 0), 0.0);
+    let ratio = calc_ratio(10, 20);
+    assert!((ratio - 0.5).abs() < f64::EPSILON);
+    let ratio_zero = calc_ratio(0, 10);
+    assert!((ratio_zero - 0.0).abs() < f64::EPSILON);
+    let ratio_div_zero = calc_ratio(5, 0);
+    assert!((ratio_div_zero - 0.0).abs() < f64::EPSILON);
 }
 
 #[test]
@@ -87,7 +90,7 @@ pub fn test_memory_arena() {
 
 #[test]
 pub fn test_thread_local_cache() {
-    let cache = ThreadLocalCache::new(5, Box::new(|| Vec::<u8>::new()));
+    let cache = ThreadLocalCache::new(5, Box::new(Vec::<u8>::new));
     assert_eq!(cache.size(), 0);
     assert!(cache.is_empty());
 

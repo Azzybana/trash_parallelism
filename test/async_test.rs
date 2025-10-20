@@ -61,7 +61,7 @@ pub fn test_compress_data_async() {
     smol::block_on(async {
         let data = b"Hello, world! This is test data for compression.";
         let compressed = data::compress_data_async(data, 6).await.unwrap();
-        assert!(compressed.len() > 0);
+        assert!(!compressed.is_empty());
         assert!(compressed.len() < data.len()); // Should be smaller for compressible data
     });
 }

@@ -59,9 +59,9 @@ pub fn test_parse_key_value_empty_values() {
     let content = "key1=\nkey2=value2\nkey3=";
     let map = parse_key_value(content);
 
-    assert_eq!(map.get("key1"), Some(&"".to_string()));
+    assert_eq!(map.get("key1"), Some(&String::new()));
     assert_eq!(map.get("key2"), Some(&"value2".to_string()));
-    assert_eq!(map.get("key3"), Some(&"".to_string()));
+    assert_eq!(map.get("key3"), Some(&String::new()));
     assert_eq!(map.len(), 3);
 }
 

@@ -42,7 +42,7 @@ pub fn test_read_dir_async() {
 pub fn test_compress_brotli() {
     let data = b"Hello, this is test data for compression!";
     let compressed = compress_brotli(data, 6).unwrap();
-    assert!(compressed.len() > 0);
+    assert!(!compressed.is_empty());
     // Note: compressed data might be larger than original for small inputs
 }
 

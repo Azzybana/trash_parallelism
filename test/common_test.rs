@@ -36,7 +36,7 @@ pub fn test_decode_base64() {
 pub fn test_compress_brotli() {
     let data = b"This is some test data for compression that should be compressible.";
     let compressed = crypto::compress_brotli(data, 6).unwrap();
-    assert!(compressed.len() > 0);
+    assert!(!compressed.is_empty());
     // Compressed data should be smaller for compressible data
     assert!(compressed.len() < data.len());
 }
@@ -175,7 +175,7 @@ pub fn test_extract_json_path() {
     assert_eq!(age.as_u64().unwrap(), 30);
 
     let active = json::extract_json_path(json, "active").unwrap().unwrap();
-    assert_eq!(active.as_bool().unwrap(), true);
+    assert!(active.as_bool().unwrap());
 
     let missing = json::extract_json_path(json, "user.missing").unwrap();
     assert!(missing.is_none());

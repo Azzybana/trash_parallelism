@@ -159,7 +159,7 @@ pub fn test_parse_and_validate_json() {
 #[test]
 pub fn test_parallel_process_string() {
     let text = "The quick brown fox jumps over the lazy dog";
-    let results = processing::parallel_process_string(text, 10, |chunk| chunk.len());
+    let results = processing::parallel_process_string(text, 10, str::len);
 
     assert!(!results.is_empty());
     let total_len: usize = results.iter().sum();
