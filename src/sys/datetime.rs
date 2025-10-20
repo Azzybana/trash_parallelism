@@ -43,6 +43,143 @@ use crate::parallel;
 use crate::serde;
 use chrono::{DateTime, NaiveDate, Utc};
 
+/// Comprehensive date and time utilities with chrono integration.
+///
+/// This module provides robust date/time handling with serialization support,
+/// parallel processing capabilities, and timezone utilities. Built on the
+/// battle-tested chrono library for reliable temporal operations.
+///
+/// ## Features
+///
+/// - **Current Time**: UTC time retrieval with high precision
+/// - **Formatting & Parsing**: RFC 3339 compliant date/time handling
+/// - **Serialization**: JSON serialization for timestamps and dates
+/// - **Batch Processing**: Parallel parsing of multiple date strings
+/// - **Timezone Support**: Basic timezone offset conversions
+/// - **Type Safety**: Compile-time guarantees for date operations
+///
+/// ## Examples
+///
+/// ### Time Operations
+/// ```rust
+/// use trash_utilities::sys::datetime::*;
+/// use std::thread;
+/// use std::time::Duration;
+///
+/// let start = current_utc_time();
+/// thread::sleep(Duration::from_millis(100));
+/// let end = current_utc_time();
+///
+/// let duration = end.signed_duration_since(start);
+/// println!("Elapsed: {} milliseconds", duration.num_milliseconds());
+/// ```
+///
+/// ### Date Formatting and Parsing
+/// ```rust
+/// use trash_utilities::sys::datetime::*;
+///
+/// // Format current time
+/// let now = current_utc_time();
+/// let rfc3339 = format_datetime(&now);
+/// println!("RFC 3339: {}", rfc3339);
+///
+/// // Parse various formats
+/// let parsed_datetime = parse_datetime("2023-12-25T00:00:00Z").unwrap();
+/// let parsed_date = parse_date("2023-12-25").unwrap();
+///
+/// println!("Parsed datetime: {}", parsed_datetime);
+/// println!("Parsed date: {}", parsed_date);
+/// ```
+///
+/// ### Configuration with Timestamps
+/// ```rust
+/// use trash_utilities::sys::datetime::*;
+/// use serde::{Serialize, Deserialize};
+///
+/// #[derive(Serialize, Deserialize)]
+/// struct Event {
+///     name: String,
+///     created_at: DateTime<Utc>,
+///     scheduled_for: Option<NaiveDate>,
+/// }
+///
+/// let event = Event {
+///     name: "System Backup".to_string(),
+///     created_at: current_utc_time(),
+///     scheduled_for: Some(parse_date("2024-01-01").unwrap()),
+/// };
+///
+/// // Serialize with timestamp
+/// let json = serialize_timestamp(&event.created_at).unwrap();
+/// println!("Timestamp JSON: {}", json);
+///
+/// // Deserialize back
+/// let restored: DateTime<Utc> = deserialize_timestamp(&json).unwrap();
+/// assert_eq!(event.created_at, restored);
+/// ```
+///
+/// ### Batch Date Processing
+/// ```rust
+/// use trash_utilities::sys::datetime::batch_parse_dates;
+///
+/// // Process multiple dates in parallel
+/// let date_strings = vec![
+///     "2023-01-01",
+///     "2023-01-15",
+///     "2023-02-01",
+///     "2023-02-14",
+///     "2023-03-01",
+/// ];
+///
+/// let dates = batch_parse_dates(&date_strings).unwrap();
+/// println!("Parsed {} dates", dates.len());
+///
+/// // Find specific dates
+/// let january_dates: Vec<_> = dates.iter()
+///     .filter(|d| d.month() == 1)
+///     .collect();
+/// println!("January dates: {}", january_dates.len());
+/// ```
+///
+/// ### Timezone Conversions
+/// ```rust
+/// use trash_utilities::sys::datetime::*;
+///
+/// let utc_time = current_utc_time();
+///
+/// // Convert to different timezones
+/// let est_time = convert_timezone_offset(&utc_time, -5);  // EST (UTC-5)
+/// let pst_time = convert_timezone_offset(&utc_time, -8);  // PST (UTC-8)
+/// let jst_time = convert_timezone_offset(&utc_time, 9);   // JST (UTC+9)
+///
+/// println!("UTC: {}", utc_time);
+/// println!("EST: {}", est_time);
+/// println!("PST: {}", pst_time);
+/// println!("JST: {}", jst_time);
+/// ```
+///
+/// ### Error Handling
+/// ```rust
+/// use trash_utilities::sys::datetime::*;
+///
+/// // Handle parsing errors gracefully
+/// match parse_datetime("invalid-date") {
+///     Ok(dt) => println!("Parsed: {}", dt),
+///     Err(e) => println!("Parse error: {}", e),
+/// }
+///
+/// match parse_date("2023-13-45") {  // Invalid date
+///     Ok(date) => println!("Parsed: {}", date),
+///     Err(e) => println!("Date parse error: {}", e),
+/// }
+///
+/// // Batch processing with error handling
+/// let mixed_dates = vec!["2023-01-01", "invalid", "2023-01-03"];
+/// match batch_parse_dates(&mixed_dates) {
+///     Ok(dates) => println!("All dates parsed: {}", dates.len()),
+///     Err(e) => println!("Batch parse failed: {}", e),
+/// }
+/// ```
 /// Gets the current UTC time.
 ///
 /// This function returns the current time in UTC using `chrono::Utc::now()`.

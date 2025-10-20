@@ -41,6 +41,181 @@ use std::collections::HashMap;
 use std::path::Path;
 use tempfile::NamedTempFile;
 
+/// Comprehensive file system and path utilities with parallel processing.
+///
+/// This module provides extensive file system operations with path manipulation,
+/// metadata retrieval, parallel processing capabilities, and serialization support.
+/// Designed for robust file system interactions in high-performance applications.
+///
+/// ## Features
+///
+/// - **Path Manipulation**: Cross-platform path normalization, joining, and component extraction
+/// - **File Metadata**: Size, modification time, type checking with comprehensive error handling
+/// - **Parallel Operations**: Concurrent file metadata retrieval and batch processing
+/// - **Serialization**: JSON serialization for file information and metadata
+/// - **Directory Traversal**: Recursive directory walking and file discovery
+/// - **Temporary Files**: Safe temporary file creation and management
+/// - **Pattern Matching**: File searching with extension-based filtering
+///
+/// ## Examples
+///
+/// ### Path Operations
+/// ```rust
+/// use trash_utilities::sys::path::*;
+///
+/// // Path manipulation
+/// let normalized = normalize_path("./src/../src/main.rs");
+/// assert_eq!(normalized, "src/main.rs");
+///
+/// let joined = join_paths("/home/user", &["documents", "work", "project"]);
+/// // On Unix: "/home/user/documents/work/project"
+///
+/// // File information extraction
+/// assert_eq!(get_file_extension("document.pdf"), Some("pdf".to_string()));
+/// assert_eq!(get_file_stem("document.pdf"), Some("document".to_string()));
+/// ```
+///
+/// ### File System Analysis
+/// ```rust,no_run
+/// use trash_utilities::sys::path::*;
+///
+/// fn analyze_directory(dir: &str) -> Result<(), Box<dyn std::error::Error>> {
+///     // Get all files recursively
+///     let all_files = walk_directory(dir)?;
+///     println!("Found {} files", all_files.len());
+///
+///     // Get metadata for all files in parallel
+///     let metadata_results = get_files_metadata_parallel(&all_files.iter().map(|s| s.as_str()).collect::<Vec<_>>());
+///
+///     let mut total_size = 0u64;
+///     let mut file_count = 0usize;
+///
+///     for (path, result) in metadata_results {
+///         match result {
+///             Ok(metadata) => {
+///                 total_size += metadata.len();
+///                 file_count += 1;
+///             }
+///             Err(e) => eprintln!("Error reading {}: {}", path, e),
+///         }
+///     }
+///
+///     println!("Successfully analyzed {} files, total size: {} bytes", file_count, total_size);
+///     Ok(())
+/// }
+/// ```
+///
+/// ### File Discovery and Filtering
+/// ```rust,no_run
+/// use trash_utilities::sys::path::*;
+///
+/// fn find_source_files() -> Result<(), Box<dyn std::error::Error>> {
+///     // Find all Rust source files
+///     let rs_files = find_files_parallel("src", "rs")?;
+///     println!("Found {} Rust files", rs_files.len());
+///
+///     // Find all TOML config files
+///     let toml_files = find_files_parallel(".", "toml")?;
+///     println!("Found {} TOML files", toml_files.len());
+///
+///     // Analyze file sizes
+///     for file in &rs_files {
+///         if let Ok(size) = get_file_size(file) {
+///             println!("{}: {} bytes", file, size);
+///         }
+///     }
+///
+///     Ok(())
+/// }
+/// ```
+///
+/// ### Metadata Serialization
+/// ```rust,no_run
+/// use trash_utilities::sys::path::*;
+/// use serde::{Serialize, Deserialize};
+///
+/// #[derive(Serialize, Deserialize)]
+/// struct FileReport {
+///     path: String,
+///     size: u64,
+///     is_file: bool,
+///     modified: Option<String>,
+/// }
+///
+/// fn generate_file_report(files: &[String]) -> Result<String, Box<dyn std::error::Error>> {
+///     let mut reports = Vec::new();
+///
+///     for file in files {
+///         if let Ok(metadata) = get_file_metadata(file) {
+///             let modified = metadata.modified()
+///                 .ok()
+///                 .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+///                 .map(|d| d.as_secs().to_string());
+///
+///             reports.push(FileReport {
+///                 path: file.clone(),
+///                 size: metadata.len(),
+///                 is_file: metadata.is_file(),
+///                 modified,
+///             });
+///         }
+///     }
+///
+///     // Serialize the entire report
+///     serde::serialize_to_json(&reports)
+/// }
+/// ```
+///
+/// ### Temporary File Management
+/// ```rust,no_run
+/// use trash_utilities::sys::path::*;
+/// use std::io::Write;
+///
+/// fn process_with_temp_file(data: &[u8]) -> Result<String, Box<dyn std::error::Error>> {
+///     // Create a temporary file
+///     let mut temp_file = create_temp_file()?;
+///     
+///     // Write data to temp file
+///     temp_file.write_all(data)?;
+///     temp_file.flush()?;
+///     
+///     let temp_path = temp_file.path().to_string_lossy().to_string();
+///     println!("Processing data in temporary file: {}", temp_path);
+///     
+///     // Process the file...
+///     let size = get_file_size(&temp_path)?;
+///     println!("Processed {} bytes", size);
+///     
+///     // File is automatically deleted when temp_file goes out of scope
+///     Ok(format!("Processed {} bytes successfully", size))
+/// }
+/// ```
+///
+/// ### Directory Operations
+/// ```rust,no_run
+/// use trash_utilities::sys::path::*;
+///
+/// fn explore_directory_structure(root: &str) -> Result<(), Box<dyn std::error::Error>> {
+///     println!("Exploring directory: {}", root);
+///
+///     // List immediate contents
+///     let entries = list_directory(root)?;
+///     println!("Directory contains {} items", entries.len());
+///
+///     for entry in &entries {
+///         let full_path = join_paths(root, &[entry]);
+///         if is_directory(&full_path) {
+///             println!("📁 {}", entry);
+///         } else if is_file(&full_path) {
+///             if let Ok(size) = get_file_size(&full_path) {
+///                 println!("📄 {} ({} bytes)", entry, size);
+///             }
+///         }
+///     }
+///
+///     Ok(())
+/// }
+/// ```
 /// Normalizes a file path, resolving `.` and `..` components.
 ///
 /// # Parameters
