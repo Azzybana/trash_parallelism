@@ -124,6 +124,34 @@ pub fn test_parallel_map_with_cancellation() {
 }
 
 #[test]
+pub fn test_create_work_queue() {
+    let tx = create_work_queue(10, |task: i32| {
+        // Just process
+        let _ = task * 2;
+    });
+    // Send a task
+    smol::block_on(async {
+        tx.send(5).await.unwrap();
+    });
+    // Give time for processing
+    std::thread::sleep(std::time::Duration::from_millis(10));
+    drop(tx);
+}
+
+#[test]
+pub fn test_parallel_map_async() {
+    smol::block_on(async {
+        let data = vec![1, 2, 3, 4, 5];
+        let results = parallel_map_async(data, |x| async move { x * 2 }, 4).await;
+        assert_eq!(results.len(), 5);
+        // Results may not be in order
+        let mut sorted = results.clone();
+        sorted.sort_unstable();
+        assert_eq!(sorted, vec![2, 4, 6, 8, 10]);
+    });
+}
+
+#[test]
 pub fn test_parallel() {
     test_parallel_map();
     test_parallel_for_each();

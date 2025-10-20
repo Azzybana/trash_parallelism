@@ -144,73 +144,214 @@ pub fn test_process_files_parallel() {
 
 #[test]
 pub fn test_async_file_writer() {
-    // Would need async test, but for now test the structure
-    // In real async test: let writer = AsyncFileWriter::new("temp.txt").await.unwrap();
+    smol::block_on(async {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let path = temp_file.path().to_str().unwrap();
+
+        let mut writer = writers::AsyncFileWriter::new(path).await.unwrap();
+        writer.write(b"Hello, ").await.unwrap();
+        writer.write(b"world!").await.unwrap();
+        writer.flush().await.unwrap();
+
+        assert_eq!(writer.bytes_written(), 13);
+        assert!(!writer.is_compressed());
+
+        let content = std::fs::read(path).unwrap();
+        assert_eq!(content, b"Hello, world!");
+    });
+}
+
+#[test]
+pub fn test_async_file_writer_compressed() {
+    smol::block_on(async {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let path = temp_file.path().to_str().unwrap();
+
+        let mut writer = writers::AsyncFileWriter::with_config(path, 1024, true).await.unwrap();
+        writer.write_json(&serde_json::json!({"test": "data"})).await.unwrap();
+        writer.flush().await.unwrap();
+
+        assert!(writer.is_compressed());
+        assert!(writer.bytes_written() > 0);
+    });
 }
 
 #[test]
 pub fn test_streaming_file_writer() {
-    // Would need async test
+    smol::block_on(async {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let path = temp_file.path().to_str().unwrap();
+
+        let mut writer = writers::StreamingFileWriter::new(path, 1024, false).await.unwrap();
+        writer.write_chunk(b"Hello, ").await.unwrap();
+        writer.write_chunk(b"world!").await.unwrap();
+
+        assert_eq!(writer.bytes_written(), 13);
+        assert_eq!(writer.chunk_size(), 1024);
+
+        let content = std::fs::read(path).unwrap();
+        assert_eq!(content, b"Hello, world!");
+    });
 }
 
 #[test]
 pub fn test_advanced_file_writer() {
-    // Would need async test
+    smol::block_on(async {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let path = temp_file.path().to_str().unwrap();
+
+        let mut writer = writers::AdvancedFileWriter::new(
+            path,
+            1024,
+            false,
+            Some(Box::new(|_| println!("Progress"))),
+            false,
+        ).await.unwrap();
+
+        writer.write_with_progress(b"Hello, world!").await.unwrap();
+        writer.flush().await.unwrap();
+
+        assert_eq!(writer.bytes_written(), 13);
+    });
 }
 
 #[test]
-pub fn test_write_stdout_async() {
-    // This writes to stdout, might be hard to test
-    let result = writers::write_stdout_async(b"test");
+pub fn test_process_files_chunked() {
+    smol::block_on(async {
+        // Create temp file with test data
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let path = temp_file.path().to_str().unwrap().to_string();
+        std::fs::write(&path, b"Hello, world! This is test data for chunked processing.").unwrap();
+
+        let paths = vec![path];
+        let results = parallelism::process_files_chunked(paths, 10, |chunk| Ok(chunk.len())).await;
+
+        assert_eq!(results.len(), 1);
+        let chunks = &results[0];
+        assert!(chunks.is_ok());
+        let chunk_lengths = chunks.as_ref().unwrap();
+        let total_len: usize = chunk_lengths.iter().sum();
+        assert_eq!(total_len, 54); // Length of test data
+    });
+}
+
+#[test]
+pub fn test_traverse_and_process() {
+    // Create temp directory with files
+    let temp_dir = tempfile::TempDir::new().unwrap();
+    let dir_path = temp_dir.path().to_str().unwrap();
+
+    // Create some test files
+    std::fs::write(format!("{dir_path}/file1.txt"), "content1").unwrap();
+    std::fs::write(format!("{dir_path}/file2.txt"), "content2").unwrap();
+    std::fs::create_dir(format!("{dir_path}/subdir")).unwrap();
+    std::fs::write(format!("{dir_path}/subdir/file3.txt"), "content3").unwrap();
+
+    let results = parallelism::traverse_and_process(dir_path, |_, content| {
+        Ok(content.len())
+    }, Some(2)).unwrap();
+
+    // Should process 3 files
+    assert_eq!(results.len(), 3);
+    for result in results {
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), 8); // "contentX".len()
+    }
+}
+
+#[test]
+pub fn test_batch_file_operations() {
+    let operations = vec![
+        || std::fs::write("temp_batch1.txt", "data1"),
+        || std::fs::write("temp_batch2.txt", "data2"),
+        || std::fs::write("temp_batch3.txt", "data3"),
+    ];
+
+    let result = parallelism::batch_file_operations(operations, false);
     assert!(result.is_ok());
+
+    // Cleanup
+    let _ = std::fs::remove_file("temp_batch1.txt");
+    let _ = std::fs::remove_file("temp_batch2.txt");
+    let _ = std::fs::remove_file("temp_batch3.txt");
 }
 
 #[test]
-pub fn test_write_stderr_async() {
-    let result = writers::write_stderr_async(b"test error");
-    assert!(result.is_ok());
+pub fn test_async_file_processor_process_file() {
+    smol::block_on(async {
+        // Create temp file
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let path = temp_file.path().to_str().unwrap();
+        std::fs::write(path, b"Hello, world!").unwrap();
+
+        let processor = streams::AsyncFileProcessor::new();
+        let results = processor.process_file(path, |chunk| chunk.len()).await.unwrap();
+
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0], 13); // "Hello, world!".len()
+    });
 }
 
 #[test]
-pub fn test_create_channel() {
-    let (tx, rx) = streams::create_channel::<String>();
-    // Basic test that channels are created
-    drop(tx);
-    drop(rx);
-}
+pub fn test_async_file_processor_process_file_async() {
+    smol::block_on(async {
+        // Create temp file
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let path = temp_file.path().to_str().unwrap();
+        std::fs::write(path, b"Hello, world!").unwrap();
 
-#[test]
-pub fn test_async_file_processor() {
-    let _processor = streams::AsyncFileProcessor::new();
-    // Test that it can be created without panicking
-}
+        let processor = streams::AsyncFileProcessor::new();
+        let results = processor.process_file_async(path, |chunk| async move { Ok(chunk.len()) }).await.unwrap();
 
-#[test]
-pub fn test_async_file_processor_builder() {
-    let _processor = streams::AsyncFileProcessorBuilder::new()
-        .buffer_size(2048)
-        .progress_callback(|_| {})
-        .build();
-    // Test that builder works without panicking
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0], 13);
+    });
 }
 
 #[test]
 pub fn test_async_stream_utils() {
-    // Test the static methods
-    // Would need actual streams for full testing
+    smol::block_on(async {
+        use futures_lite::stream;
+        let stream = stream::iter(vec![1, 2, 3, 4, 5]);
+        let results = streams::AsyncStreamUtils::map_stream(stream, |x| x * 2).await;
+        assert_eq!(results, vec![2, 4, 6, 8, 10]);
+
+        let stream2 = stream::iter(vec![1, 2, 3, 4, 5]);
+        let filtered = streams::AsyncStreamUtils::filter_stream(stream2, |&x| x % 2 == 0).await;
+        assert_eq!(filtered, vec![2, 4]);
+
+        let stream3 = stream::iter(vec![1, 2, 3]);
+        let collected = streams::AsyncStreamUtils::collect_stream(stream3).await;
+        assert_eq!(collected, vec![1, 2, 3]);
+    });
 }
 
 #[test]
-pub fn test_channel_stream_processor() {
-    let processor = streams::ChannelStreamProcessor::new(|x: i32| x * 2);
-    // Basic structure test
-    drop(processor);
+pub fn test_channel_stream_processor_send_receive() {
+    smol::block_on(async {
+        let processor = streams::ChannelStreamProcessor::new(|x: i32| x * 2);
+        processor.send(5).await.unwrap();
+        let result = processor.receive().await.unwrap();
+        assert_eq!(result, 10);
+    });
 }
 
 #[test]
-pub fn test_buffered_async_reader() {
-    // Would need an actual async reader
-    // Basic structure test
+pub fn test_buffered_async_reader_read() {
+    smol::block_on(async {
+        use futures_lite::io::Cursor;
+        let data = b"Hello, world!";
+        let cursor = Cursor::new(data.to_vec());
+        let mut reader = streams::BufferedAsyncReader::new(cursor, 10);
+
+        let buffer = reader.read_buffer().await.unwrap();
+        assert_eq!(buffer, b"Hello, wor");
+
+        reader.consume(7); // consume "Hello, "
+
+        let buffer2 = reader.read_buffer().await.unwrap();
+        assert_eq!(buffer2, b"world!");
+    });
 }
 
 #[test]
@@ -224,10 +365,16 @@ pub fn test_io() {
     test_parallel_map();
     test_parallel_filter();
     test_process_files_parallel();
-    test_write_stdout_async();
-    test_write_stderr_async();
-    test_create_channel();
-    test_async_file_processor();
-    test_async_file_processor_builder();
-    test_channel_stream_processor();
+    test_process_files_chunked();
+    test_traverse_and_process();
+    test_batch_file_operations();
+    test_async_file_processor_process_file();
+    test_async_file_processor_process_file_async();
+    test_async_stream_utils();
+    test_channel_stream_processor_send_receive();
+    test_buffered_async_reader_read();
+    test_async_file_writer();
+    test_async_file_writer_compressed();
+    test_streaming_file_writer();
+    test_advanced_file_writer();
 }
