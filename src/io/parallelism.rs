@@ -9,6 +9,27 @@
 //! - **Batch Operations**: Map and filter operations on file collections
 //! - **Integration**: Uses existing parallel module to avoid duplication
 //! - **Async Support**: Non-blocking parallel operations with smol
+//!
+//! ## Examples
+//!
+//! Basic parallel file processing:
+//! ```rust
+//! use trash_utilities::io::parallelism::*;
+//!
+//! // Process multiple files in parallel
+//! let paths = vec!["file1.txt".to_string(), "file2.txt".to_string()];
+//! let results = process_files_parallel(paths, |content| {
+//!     Ok(content.len())
+//! });
+//!
+//! // Results maintain input order
+//! for result in results {
+//!     match result {
+//!         Ok(length) => println!("File has {} bytes", length),
+//!         Err(e) => eprintln!("Error processing file: {}", e),
+//!     }
+//! }
+//! ```
 
 // Standard library imports
 // (none needed)
@@ -22,16 +43,29 @@
 /// This avoids duplicating parallel logic across modules.
 ///
 /// # Type Parameters
-/// - `T`: Input type that can be sent across threads
-/// - `U`: Output type that can be sent across threads
-/// - `F`: Function type for transformation
+///
+/// * `T` - Input type that can be sent across threads
+/// * `U` - Output type that can be sent across threads
+/// * `F` - Function type for transformation
 ///
 /// # Parameters
-/// - `data`: Vector of input items to process
-/// - `f`: Function to apply to each item
+///
+/// * `data` - Vector of input items to process
+/// * `f` - Function to apply to each item
 ///
 /// # Returns
+///
 /// Vector of transformed results in the same order as input
+///
+/// # Examples
+///
+/// ```rust
+/// use trash_utilities::io::parallelism::parallel_map;
+///
+/// let numbers = vec![1, 2, 3, 4, 5];
+/// let doubled = parallel_map(numbers, |x| x * 2);
+/// assert_eq!(doubled, vec![2, 4, 6, 8, 10]);
+/// ```
 #[must_use]
 pub fn parallel_map<T, U, F>(data: Vec<T>, f: F) -> Vec<U>
 where
@@ -48,15 +82,28 @@ where
 /// Uses `crate::parallel::parallel_filter` for consistent filtering behavior.
 ///
 /// # Type Parameters
-/// - `T`: Item type that can be sent across threads
-/// - `F`: Predicate function type
+///
+/// * `T` - Item type that can be sent across threads
+/// * `F` - Predicate function type
 ///
 /// # Parameters
-/// - `data`: Vector of items to filter
-/// - `f`: Predicate function that returns true for items to keep
+///
+/// * `data` - Vector of items to filter
+/// * `f` - Predicate function that returns true for items to keep
 ///
 /// # Returns
+///
 /// Vector containing only items that passed the filter
+///
+/// # Examples
+///
+/// ```rust
+/// use trash_utilities::io::parallelism::parallel_filter;
+///
+/// let numbers = vec![1, 2, 3, 4, 5, 6];
+/// let evens = parallel_filter(numbers, |x| x % 2 == 0);
+/// assert_eq!(evens, vec![2, 4, 6]);
+/// ```
 #[must_use]
 pub fn parallel_filter<T, F>(data: Vec<T>, f: F) -> Vec<T>
 where
@@ -73,18 +120,41 @@ where
 /// Uses work queues for load balancing and efficient resource utilization.
 ///
 /// # Type Parameters
-/// - `F`: Processor function type
-/// - `R`: Result type from processing
+///
+/// * `F` - Processor function type
+/// * `R` - Result type from processing
 ///
 /// # Parameters
-/// - `paths`: Vector of file paths to process
-/// - `processor`: Function that takes file content and returns a result
+///
+/// * `paths` - Vector of file paths to process
+/// * `processor` - Function that takes file content and returns a result
 ///
 /// # Returns
+///
 /// Vector of results in the same order as input paths
 ///
 /// # Errors
+///
 /// Returns error for any file that couldn't be read or processed
+///
+/// # Examples
+///
+/// ```rust,no_run
+/// use trash_utilities::io::parallelism::process_files_parallel;
+///
+/// let paths = vec!["file1.txt".to_string(), "file2.txt".to_string()];
+/// let results = process_files_parallel(paths, |content| {
+///     // Count lines in each file
+///     Ok(content.lines().count())
+/// });
+///
+/// for (i, result) in results.into_iter().enumerate() {
+///     match result {
+///         Ok(line_count) => println!("File {} has {} lines", i + 1, line_count),
+///         Err(e) => eprintln!("Error processing file {}: {}", i + 1, e),
+///     }
+/// }
+/// ```
 #[must_use]
 pub fn process_files_parallel<F, R>(
     paths: Vec<String>,
@@ -110,19 +180,46 @@ where
 /// in parallel using the parallel module's chunking capabilities.
 ///
 /// # Type Parameters
-/// - `F`: Processor function for individual chunks
-/// - `R`: Result type from chunk processing
+///
+/// * `F` - Processor function for individual chunks
+/// * `R` - Result type from chunk processing
 ///
 /// # Parameters
-/// - `paths`: File paths to process
-/// - `chunk_size`: Size of each chunk in bytes
-/// - `processor`: Function to process each chunk
+///
+/// * `paths` - File paths to process
+/// * `chunk_size` - Size of each chunk in bytes
+/// * `processor` - Function to process each chunk
 ///
 /// # Returns
+///
 /// Vector of results for each file
 ///
 /// # Errors
+///
 /// Returns error if file reading or processing fails
+///
+/// # Examples
+///
+/// ```rust,no_run
+/// use trash_utilities::io::parallelism::process_files_chunked;
+///
+/// let paths = vec!["large_file.txt".to_string()];
+/// let results = process_files_chunked(paths, 1024, |chunk| {
+///     // Process each 1KB chunk
+///     Ok(chunk.len())
+/// }).await;
+///
+/// for result in results {
+///     match result {
+///         Ok(chunk_lengths) => {
+///             println!("File processed in {} chunks", chunk_lengths.len());
+///             let total_bytes: usize = chunk_lengths.iter().sum();
+///             println!("Total bytes: {}", total_bytes);
+///         }
+///         Err(e) => eprintln!("Error: {}", e),
+///     }
+/// }
+/// ```
 pub async fn process_files_chunked<F, R>(
     paths: Vec<String>,
     chunk_size: usize,
@@ -178,19 +275,50 @@ where
 /// Uses the parallel module for efficient work distribution.
 ///
 /// # Type Parameters
-/// - `F`: File processor function type
-/// - `R`: Result type from processing
+///
+/// * `F` - File processor function type
+/// * `R` - Result type from processing
 ///
 /// # Parameters
-/// - `root_path`: Root directory to start traversal
-/// - `file_processor`: Function to process each file
-/// - `max_depth`: Maximum directory depth to traverse (None for unlimited)
+///
+/// * `root_path` - Root directory to start traversal
+/// * `file_processor` - Function to process each file
+/// * `max_depth` - Maximum directory depth to traverse (None for unlimited)
 ///
 /// # Returns
+///
 /// Vector of processing results for all files found
 ///
 /// # Errors
+///
 /// Returns errors for files that couldn't be read or processed
+///
+/// # Examples
+///
+/// ```rust,no_run
+/// use trash_utilities::io::parallelism::traverse_and_process;
+///
+/// let results = traverse_and_process(
+///     "./src",
+///     |path, content| {
+///         // Count lines in each Rust file
+///         if path.ends_with(".rs") {
+///             Ok(content.lines().count())
+///         } else {
+///             Ok(0)
+///         }
+///     },
+///     Some(3) // Max depth of 3
+/// );
+///
+/// match results {
+///     Ok(file_results) => {
+///         let total_lines: usize = file_results.iter().filter_map(|r| r.as_ref().ok()).sum();
+///         println!("Total lines in Rust files: {}", total_lines);
+///     }
+///     Err(e) => eprintln!("Traversal error: {}", e),
+/// }
+/// ```
 pub fn traverse_and_process<F, R>(
     root_path: &str,
     file_processor: F,
@@ -251,17 +379,39 @@ fn collect_files_recursive(
 /// changes if any operation fails. Uses the parallel module for concurrent execution.
 ///
 /// # Type Parameters
-/// - `F`: Operation function type
+///
+/// * `F` - Operation function type
 ///
 /// # Parameters
-/// - `operations`: Vector of operations to perform
-/// - `rollback_on_error`: Whether to rollback successful operations if any fail
+///
+/// * `operations` - Vector of operations to perform
+/// * `rollback_on_error` - Whether to rollback successful operations if any fail
 ///
 /// # Returns
+///
 /// Result indicating success or failure of the batch operation
 ///
 /// # Errors
+///
 /// Returns an error if any operation fails and rollback is requested
+///
+/// # Examples
+///
+/// ```rust,no_run
+/// use trash_utilities::io::parallelism::batch_file_operations;
+/// use std::fs;
+///
+/// let operations = vec![
+///     || fs::write("file1.txt", "content1"),
+///     || fs::write("file2.txt", "content2"),
+///     || fs::write("file3.txt", "content3"),
+/// ];
+///
+/// match batch_file_operations(operations, true) {
+///     Ok(()) => println!("All operations completed successfully"),
+///     Err(e) => eprintln!("Batch operation failed: {}", e),
+/// }
+/// ```
 pub fn batch_file_operations<F>(
     operations: Vec<F>,
     rollback_on_error: bool,

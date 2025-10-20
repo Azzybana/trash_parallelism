@@ -10,6 +10,52 @@
 //! - **Stream Processing**: Async stream utilities using futures-lite
 //! - **Memory Efficient**: Chunked reading to handle large files
 //! - **Progress Tracking**: Optional progress callbacks during processing
+//!
+//! ## Examples
+//!
+//! Basic async file processing:
+//! ```rust,no_run
+//! use trash_utilities::io::streams::*;
+//!
+//! #[tokio::main]
+//! async fn main() -> Result<(), Box<dyn std::error::Error>> {
+//!     // Create a file processor with progress tracking
+//!     let processor = AsyncFileProcessor::builder()
+//!         .buffer_size(4096)
+//!         .progress_callback(|bytes| println!("Processed {} bytes", bytes))
+//!         .build();
+//!
+//!     // Process file in chunks
+//!     let results = processor.process_file("large_file.txt", |chunk| {
+//!         // Process each chunk
+//!         chunk.len()
+//!     }).await?;
+//!
+//!     println!("Processed {} chunks", results.len());
+//!     Ok(())
+//! }
+//! ```
+//!
+//! Channel-based communication:
+//! ```rust
+//! use trash_utilities::io::streams::*;
+//!
+//! #[tokio::main]
+//! async fn main() -> Result<(), Box<dyn std::error::Error>> {
+//!     let (tx, rx) = create_channel::<String>();
+//!
+//!     // Send messages
+//!     tx.send("Hello".to_string()).await?;
+//!     tx.send("World".to_string()).await?;
+//!
+//!     // Receive and process
+//!     while let Ok(message) = rx.recv().await {
+//!         println!("Received: {}", message);
+//!     }
+//!
+//!     Ok(())
+//! }
+//! ```
 
 // Standard library imports
 use std::sync::Arc;
@@ -25,18 +71,23 @@ use smol::channel::{Receiver, Sender, unbounded};
 /// This provides a simple interface while using the proven smol implementation.
 ///
 /// # Type Parameters
-/// - `T`: The type of messages to be sent through the channel
+///
+/// * `T` - The type of messages to be sent through the channel
 ///
 /// # Returns
+///
 /// A tuple `(Sender<T>, Receiver<T>)` for sending and receiving messages
 ///
 /// # Examples
+///
 /// ```rust
-/// use trash_utilities::io::create_channel;
+/// use trash_utilities::io::streams::create_channel;
 /// use smol::channel::Sender;
 ///
 /// let (tx, rx) = create_channel::<String>();
 /// // Now you can send and receive messages asynchronously
+/// // tx.send("message".to_string()).await?;
+/// // let message = rx.recv().await?;
 /// ```
 #[must_use]
 pub fn create_channel<T>() -> (Sender<T>, Receiver<T>) {
@@ -47,6 +98,27 @@ pub fn create_channel<T>() -> (Sender<T>, Receiver<T>) {
 ///
 /// Processes files in chunks to handle large files efficiently.
 /// Supports progress tracking and async processing functions.
+///
+/// # Examples
+///
+/// Basic usage:
+/// ```rust,no_run
+/// use trash_utilities::io::streams::AsyncFileProcessor;
+///
+/// #[tokio::main]
+/// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+///     let processor = AsyncFileProcessor::new();
+///     
+///     let line_counts = processor.process_file("large_file.txt", |chunk| {
+///         // Count lines in this chunk
+///         chunk.as_ref().iter().filter(|&&b| b == b'\n').count()
+///     }).await?;
+///     
+///     let total_lines: usize = line_counts.iter().sum();
+///     println!("Total lines: {}", total_lines);
+///     Ok(())
+/// }
+/// ```
 pub struct AsyncFileProcessor {
     buffer_size: usize,
     progress_callback: Option<Box<dyn Fn(u64) + Send + Sync>>,

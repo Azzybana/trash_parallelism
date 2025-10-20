@@ -10,6 +10,49 @@
 //! - **Serialization**: JSON/binary serialization using serde utilities
 //! - **Async Operations**: Non-blocking writes using smol and futures-lite
 //! - **Progress Tracking**: Optional progress callbacks and statistics
+//!
+//! ## Examples
+//!
+//! Basic buffered writing:
+//! ```rust,no_run
+//! use trash_utilities::io::writers::AsyncFileWriter;
+//!
+//! #[tokio::main]
+//! async fn main() -> Result<(), Box<dyn std::error::Error>> {
+//!     // Create a compressed writer
+//!     let mut writer = AsyncFileWriter::with_config("output.txt", 8192, true).await?;
+//!     
+//!     // Write data (buffered)
+//!     writer.write(b"Hello, ").await?;
+//!     writer.write(b"world!").await?;
+//!     
+//!     // Write JSON data
+//!     writer.write_json(&serde_json::json!({"message": "done"})).await?;
+//!     
+//!     // Flush to disk
+//!     writer.flush().await?;
+//!     println!("Written {} bytes", writer.bytes_written());
+//!     
+//!     Ok(())
+//! }
+//! ```
+//!
+//! Streaming large data:
+//! ```rust,no_run
+//! use trash_utilities::io::writers::StreamingFileWriter;
+//!
+//! #[tokio::main]
+//! async fn main() -> Result<(), Box<dyn std::error::Error>> {
+//!     let mut writer = StreamingFileWriter::new("large_output.bin", 65536, false).await?;
+//!     
+//!     for chunk in large_data_chunks {
+//!         writer.write_chunk(&chunk).await?;
+//!     }
+//!     
+//!     println!("Total bytes written: {}", writer.bytes_written());
+//!     Ok(())
+//! }
+//! ```
 
 // Standard library imports
 // (none needed)
@@ -22,6 +65,29 @@ use futures_lite::{AsyncWriteExt, StreamExt};
 ///
 /// Provides buffered writing with automatic flushing, optional compression,
 /// and progress tracking. Uses smol for async I/O operations.
+///
+/// # Examples
+///
+/// Basic usage:
+/// ```rust,no_run
+/// use trash_utilities::io::writers::AsyncFileWriter;
+///
+/// #[tokio::main]
+/// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+///     // Create writer with compression
+///     let mut writer = AsyncFileWriter::with_config("output.txt", 8192, true).await?;
+///     
+///     // Write data
+///     writer.write(b"Hello, world!").await?;
+///     writer.write_json(&serde_json::json!({"status": "ok"})).await?;
+///     
+///     // Flush and check bytes written
+///     writer.flush().await?;
+///     println!("Bytes written: {}", writer.bytes_written());
+///     
+///     Ok(())
+/// }
+/// ```
 #[derive(Debug)]
 pub struct AsyncFileWriter {
     file: smol::fs::File,

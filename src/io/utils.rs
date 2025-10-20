@@ -10,6 +10,48 @@
 //! - **Thread-Safe Utilities**: Atomic counters and LRU caching
 //! - **Memory Efficiency**: String interning for reduced memory usage
 //! - **Performance**: Optimized with ahash and `parking_lot`
+//!
+//! ## Examples
+//!
+//! Basic file operations:
+//! ```rust,no_run
+//! use trash_utilities::io::utils::*;
+//!
+//! #[tokio::main]
+//! async fn main() -> Result<(), Box<dyn std::error::Error>> {
+//!     // Read and write files
+//!     let content = read_file_async("input.txt").await?;
+//!     write_file_async("output.txt", &content).await?;
+//!     
+//!     // Directory operations
+//!     create_dir_async("new_dir").await?;
+//!     let entries = read_dir_async(".").await?;
+//!     println!("Found {} entries", entries.len());
+//!     
+//!     Ok(())
+//! }
+//! ```
+//!
+//! Thread-safe data structures:
+//! ```rust
+//! use trash_utilities::io::utils::*;
+//!
+//! // Atomic counter
+//! let counter = AtomicCounter::new();
+//! counter.increment();
+//! assert_eq!(counter.get(), 1);
+//!
+//! // LRU cache
+//! let cache = LruCache::new(100);
+//! cache.insert("key", "value");
+//! assert_eq!(cache.get(&"key"), Some("value"));
+//!
+//! // String interning
+//! let interner = StringInterner::new();
+//! let s1 = interner.intern("hello");
+//! let s2 = interner.intern("hello");
+//! assert_eq!(s1.as_ptr(), s2.as_ptr()); // Same memory
+//! ```
 
 // Standard library imports
 use std::sync::Arc;
