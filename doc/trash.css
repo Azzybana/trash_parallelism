@@ -222,21 +222,46 @@ Original by Dempfi (https://github.com/dempfi/trash)
     /* Anti-Flash White */
 }
 
-:root[data-theme="trash"] .sidebar .current,
-:root[data-theme="trash"] .sidebar .current a,
-:root[data-theme="trash"] .sidebar a:hover,
-:root[data-theme="trash"] #src-sidebar div.files>a:hover,
-:root[data-theme="trash"] details.dir-entry summary:hover,
-:root[data-theme="trash"] #src-sidebar div.files>a:focus,
-:root[data-theme="trash"] details.dir-entry summary:focus,
-:root[data-theme="trash"] #src-sidebar div.files>a.selected {
-    color: #FFFB1C;
-    /* Bright Yellow */
-}
-
 :root[data-theme="trash"] .sidebar-elems .location {
     color: #FFFB1C;
     /* Bright Blue */
+}
+
+:root[data-theme="trash"] .sidebar a {
+    color: transparent;
+    background: linear-gradient(319deg, #8f83d9 0%, #d378a9 37%, #c5a2ce 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-stroke: 0.1px rgba(255, 255, 255, 0.5);
+    text-shadow: 0px 0px 8px rgba(0, 0, 0, 0.5);
+}
+:root[data-theme="trash"] .sidebar .current,
+:root[data-theme="trash"] .sidebar .current a,
+:root[data-theme="trash"] #src-sidebar div.files>a:focus,
+:root[data-theme="trash"] details.dir-entry summary:focus,
+:root[data-theme="trash"] #src-sidebar div.files>a.selected,
+:root[data-theme="trash"] .sidebar a:hover,
+:root[data-theme="trash"] #src-sidebar div.files>a:hover,
+:root[data-theme="trash"] details.dir-entry summary:hover {
+    color: transparent;
+    background: linear-gradient(319deg, #758615 30%, #a1dfd9 60%, #705de7 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-stroke: 0.1px rgba(255, 255, 255, 0.5);
+    text-shadow: 0px 0px 8px rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme="trash"] .macro {
+    background-color: hsla(3, 100%, 80%, 1);
+    background-image:
+        radial-gradient(at 35% 12%, hsla(24, 100%, 45%, 1) 0px, transparent 50%),
+        radial-gradient(at 47% 0%, hsla(315, 100%, 45%, 1) 0px, transparent 50%),
+        radial-gradient(at 67% 94%, hsla(3, 100%, 45%, 1) 0px, transparent 50%),
+        radial-gradient(at 27% 49%, hsla(336, 100%, 45%, 1) 0px, transparent 50%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-stroke: 0.1px rgba(255, 255, 255, 0.5);
+    text-shadow: 0px 0px 8px rgba(0, 0, 0, 0.5);
 }
 
 :root[data-theme="trash"] a[data-nosnippet].line-highlighted {
