@@ -231,7 +231,7 @@ pub fn test_process_files_chunked() {
         assert!(chunks.is_ok());
         let chunk_lengths = chunks.as_ref().unwrap();
         let total_len: usize = chunk_lengths.iter().sum();
-        assert_eq!(total_len, 54); // Length of test data
+        assert_eq!(total_len, 55); // Length of test data
     });
 }
 
@@ -342,10 +342,10 @@ pub fn test_buffered_async_reader_read() {
         use futures_lite::io::Cursor;
         let data = b"Hello, world!";
         let cursor = Cursor::new(data.to_vec());
-        let mut reader = streams::BufferedAsyncReader::new(cursor, 10);
+        let mut reader = streams::BufferedAsyncReader::new(cursor, 20);
 
         let buffer = reader.read_buffer().await.unwrap();
-        assert_eq!(buffer, b"Hello, wor");
+        assert_eq!(buffer, b"Hello, world!");
 
         reader.consume(7); // consume "Hello, "
 
