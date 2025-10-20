@@ -1,3 +1,22 @@
+/// Channel monitoring and statistics for performance analysis.
+///
+/// This module provides tools for tracking channel performance, including message counts,
+/// latency measurements, error rates, and bandwidth statistics.
+///
+/// # Examples
+///
+/// Basic monitoring:
+/// ```rust
+/// use trash_utilities::channels::monitoring::MonitoredChannel;
+/// use smol;
+///
+/// # smol::block_on(async {
+/// let channel = MonitoredChannel::new();
+/// channel.send_async("test".to_string()).await.unwrap();
+/// let stats = channel.stats();
+/// assert_eq!(stats.messages_sent, 1);
+/// # });
+/// ```
 // Standard library imports
 use std::{
     sync::Arc,
@@ -14,25 +33,60 @@ use serde_json;
 /// Channel statistics and monitoring
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct ChannelStats {
+    /// Number of messages successfully sent
     pub messages_sent: u64,
+    /// Number of messages successfully received
     pub messages_received: u64,
+    /// Total bytes sent
     pub bytes_sent: u64,
+    /// Total bytes received
     pub bytes_received: u64,
+    /// Number of errors encountered
     pub errors: u64,
+    /// Average latency per message
     pub avg_latency: Option<Duration>,
 }
 
 impl ChannelStats {
     /// Reset all statistics
+    ///
+    /// Clears all counters and measurements.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::channels::monitoring::ChannelStats;
+    ///
+    /// let mut stats = ChannelStats::default();
+    /// stats.messages_sent = 10;
+    /// stats.reset();
+    /// assert_eq!(stats.messages_sent, 0);
+    /// ```
     pub fn reset(&mut self) {
         *self = Self::default();
     }
 
     /// Get statistics as JSON
     ///
+    /// Serializes the statistics to a JSON string.
+    ///
+    /// # Returns
+    ///
+    /// JSON string representation of the statistics.
+    ///
     /// # Errors
     ///
     /// Returns an error if serialization to JSON fails.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::channels::monitoring::ChannelStats;
+    ///
+    /// let stats = ChannelStats::default();
+    /// let json = stats.to_json().unwrap();
+    /// assert!(json.contains("messages_sent"));
+    /// ```
     pub fn to_json(&self) -> Result<String, serde_json::Error> {
         serde_json::to_string(self)
     }

@@ -1,3 +1,28 @@
+/// Specialized channel implementations for advanced use cases.
+///
+/// This module provides specialized channel types for specific communication patterns
+/// including base64 encoding, compression, file backing, rate limiting, prioritization,
+/// parallel processing, and persistence.
+///
+/// # Examples
+///
+/// Base64 channel for text transport:
+/// ```rust
+/// use trash_utilities::channels::{core::bounded_queue_3, specialist::Base64Channel};
+/// use smol;
+/// use serde::{Serialize, Deserialize};
+///
+/// #[derive(Serialize, Deserialize)]
+/// struct Data { value: i32 }
+///
+/// # smol::block_on(async {
+/// let (tx, rx) = bounded_queue_3::<String>(10);
+/// let channel = Base64Channel::new(tx);
+/// channel.send_base64(&Data { value: 42 }).await.unwrap();
+/// let data: Data = Base64Channel::recv_base64(&rx).await.unwrap();
+/// assert_eq!(data.value, 42);
+/// # });
+/// ```
 // Standard library imports
 use std::{
     io::{BufRead, BufReader, BufWriter, Read, Write},
@@ -12,13 +37,58 @@ use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use tempfile::NamedTempFile;
 
-/// Base64-encoded channel for text-based transport (non-blocking)
+/// Base64-encoded channel for text-based transport (non-blocking).
+///
+/// Automatically encodes data to base64 before sending and decodes on receive.
+/// Useful for text-based protocols or when binary data needs to be transmitted as text.
+///
+/// # Type Parameters
+///
+/// * `T` - The type of data to send/receive (must implement Serialize/Deserialize).
+///
+/// # Examples
+///
+/// ```rust
+/// use trash_utilities::channels::{core::bounded_queue_3, specialist::Base64Channel};
+/// use smol;
+/// use serde::{Serialize, Deserialize};
+///
+/// #[derive(Serialize, Deserialize, Debug, PartialEq)]
+/// struct Message { id: u32, data: String }
+///
+/// # smol::block_on(async {
+/// let (tx, rx) = bounded_queue_3::<String>(10);
+/// let channel = Base64Channel::new(tx);
+///
+/// let msg = Message { id: 1, data: "hello".to_string() };
+/// channel.send_base64(&msg).await.unwrap();
+/// let received: Message = Base64Channel::recv_base64(&rx).await.unwrap();
+/// assert_eq!(received, msg);
+/// # });
+/// ```
 pub struct Base64Channel {
     inner: crate::channels::core::TxFuture<String>,
 }
 
 impl Base64Channel {
     /// Create a new base64 channel
+    ///
+    /// # Parameters
+    ///
+    /// * `inner` - The underlying string channel to wrap.
+    ///
+    /// # Returns
+    ///
+    /// A new `Base64Channel` instance.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::channels::{core::bounded_queue_3, specialist::Base64Channel};
+    ///
+    /// let (tx, _) = bounded_queue_3::<String>(10);
+    /// let channel = Base64Channel::new(tx);
+    /// ```
     #[must_use]
     pub fn new(inner: crate::channels::core::TxFuture<String>) -> Self {
         Self { inner }
@@ -26,9 +96,36 @@ impl Base64Channel {
 
     /// Send data encoded as base64 (async, non-blocking)
     ///
+    /// Serializes the data to JSON, encodes it as base64, and sends it.
+    ///
+    /// # Parameters
+    ///
+    /// * `data` - The data to send.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - The type of data to send (must implement Serialize).
+    ///
     /// # Errors
     ///
     /// Returns an error if serialization or channel send fails.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::channels::{core::bounded_queue_3, specialist::Base64Channel};
+    /// use smol;
+    /// use serde::Serialize;
+    ///
+    /// #[derive(Serialize)]
+    /// struct Data { value: i32 }
+    ///
+    /// # smol::block_on(async {
+    /// let (tx, _) = bounded_queue_3::<String>(10);
+    /// let channel = Base64Channel::new(tx);
+    /// channel.send_base64(&Data { value: 42 }).await.unwrap();
+    /// # });
+    /// ```
     pub async fn send_base64<T: Serialize>(
         &self,
         data: &T,
@@ -41,9 +138,42 @@ impl Base64Channel {
 
     /// Receive and decode base64 data (async, non-blocking)
     ///
+    /// Receives base64-encoded data, decodes it, and deserializes from JSON.
+    ///
+    /// # Parameters
+    ///
+    /// * `receiver` - The channel receiver to read from.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - The type to deserialize into (must implement Deserialize).
+    ///
+    /// # Returns
+    ///
+    /// The deserialized data on success.
+    ///
     /// # Errors
     ///
     /// Returns an error if channel receive, base64 decoding, or deserialization fails.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::channels::{core::bounded_queue_3, specialist::Base64Channel};
+    /// use smol;
+    /// use serde::{Serialize, Deserialize};
+    ///
+    /// #[derive(Serialize, Deserialize, Debug, PartialEq)]
+    /// struct Data { value: i32 }
+    ///
+    /// # smol::block_on(async {
+    /// let (tx, rx) = bounded_queue_3::<String>(10);
+    /// let channel = Base64Channel::new(tx);
+    /// channel.send_base64(&Data { value: 42 }).await.unwrap();
+    /// let data: Data = Base64Channel::recv_base64(&rx).await.unwrap();
+    /// assert_eq!(data.value, 42);
+    /// # });
+    /// ```
     pub async fn recv_base64<T: for<'de> Deserialize<'de>>(
         receiver: &crate::channels::core::RxFuture<String>,
     ) -> Result<T, Box<dyn std::error::Error>> {
@@ -55,7 +185,33 @@ impl Base64Channel {
     }
 }
 
-/// Compressed channel for bandwidth-efficient communication (non-blocking)
+/// Compressed channel for bandwidth-efficient communication (non-blocking).
+///
+/// Automatically compresses data using Brotli before sending and decompresses on receive.
+/// Ideal for reducing network bandwidth or storage when dealing with compressible data.
+///
+/// # Type Parameters
+///
+/// * `T` - The type of data to send/receive (must implement Serialize/Deserialize).
+///
+/// # Examples
+///
+/// ```rust
+/// use trash_utilities::channels::specialist::CompressedChannel;
+/// use smol;
+/// use serde::{Serialize, Deserialize};
+///
+/// #[derive(Serialize, Deserialize, Debug, PartialEq)]
+/// struct LargeData { content: String }
+///
+/// # smol::block_on(async {
+/// let channel = CompressedChannel::new();
+/// let data = LargeData { content: "A".repeat(1000) };
+/// channel.send_compressed(&data).await.unwrap();
+/// let received: LargeData = channel.recv_decompressed().await.unwrap();
+/// assert_eq!(received, data);
+/// # });
+/// ```
 pub struct CompressedChannel {
     tx: crate::channels::core::TxFuture<Vec<u8>>,
     rx: crate::channels::core::RxFuture<Vec<u8>>,
@@ -64,12 +220,43 @@ pub struct CompressedChannel {
 
 impl CompressedChannel {
     /// Create a new compressed channel with defaults
+    ///
+    /// Uses capacity of 100 and compression level 6.
+    ///
+    /// # Returns
+    ///
+    /// A new `CompressedChannel` instance.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::channels::specialist::CompressedChannel;
+    ///
+    /// let channel = CompressedChannel::new();
+    /// ```
     #[must_use]
     pub fn new() -> Self {
         Self::with_config(100, 6)
     }
 
     /// Create a new compressed channel with custom config
+    ///
+    /// # Parameters
+    ///
+    /// * `capacity` - The channel buffer capacity.
+    /// * `compression_level` - Brotli compression level (0-11).
+    ///
+    /// # Returns
+    ///
+    /// A new `CompressedChannel` instance with the specified configuration.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::channels::specialist::CompressedChannel;
+    ///
+    /// let channel = CompressedChannel::with_config(50, 9);
+    /// ```
     #[must_use]
     pub fn with_config(capacity: usize, compression_level: u32) -> Self {
         let (tx, rx) = crate::channels::core::bounded_queue_3(capacity);
@@ -81,6 +268,21 @@ impl CompressedChannel {
     }
 
     /// Create a builder for advanced configuration
+    ///
+    /// # Returns
+    ///
+    /// A `CompressedChannelBuilder` instance.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::channels::specialist::CompressedChannel;
+    ///
+    /// let channel = CompressedChannel::builder()
+    ///     .capacity(200)
+    ///     .compression_level(11)
+    ///     .build();
+    /// ```
     #[must_use]
     pub fn builder() -> CompressedChannelBuilder {
         CompressedChannelBuilder::new()
@@ -88,9 +290,36 @@ impl CompressedChannel {
 
     /// Send data with compression (async, non-blocking)
     ///
+    /// Serializes the data to JSON, compresses it with Brotli, and sends it.
+    ///
+    /// # Parameters
+    ///
+    /// * `data` - The data to send.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - The type of data to send (must implement Serialize).
+    ///
     /// # Errors
     ///
     /// Returns an error if serialization, compression, or channel send fails.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::channels::specialist::CompressedChannel;
+    /// use smol;
+    /// use serde::Serialize;
+    ///
+    /// #[derive(Serialize)]
+    /// struct Data { text: String }
+    ///
+    /// # smol::block_on(async {
+    /// let channel = CompressedChannel::new();
+    /// let data = Data { text: "compressible text".repeat(100) };
+    /// channel.send_compressed(&data).await.unwrap();
+    /// # });
+    /// ```
     pub async fn send_compressed<T: Serialize>(
         &self,
         data: &T,
@@ -103,9 +332,38 @@ impl CompressedChannel {
 
     /// Receive and decompress data (async, non-blocking)
     ///
+    /// Receives compressed data, decompresses it, and deserializes from JSON.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - The type to deserialize into (must implement Deserialize).
+    ///
+    /// # Returns
+    ///
+    /// The deserialized data on success.
+    ///
     /// # Errors
     ///
     /// Returns an error if channel receive, decompression, or deserialization fails.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::channels::specialist::CompressedChannel;
+    /// use smol;
+    /// use serde::{Serialize, Deserialize};
+    ///
+    /// #[derive(Serialize, Deserialize, Debug, PartialEq)]
+    /// struct Data { text: String }
+    ///
+    /// # smol::block_on(async {
+    /// let channel = CompressedChannel::new();
+    /// let data = Data { text: "test".to_string() };
+    /// channel.send_compressed(&data).await.unwrap();
+    /// let received: Data = channel.recv_decompressed().await.unwrap();
+    /// assert_eq!(received, data);
+    /// # });
+    /// ```
     pub async fn recv_decompressed<T: for<'de> Deserialize<'de>>(
         &self,
     ) -> Result<T, Box<dyn std::error::Error>> {
@@ -148,6 +406,18 @@ pub struct CompressedChannelBuilder {
 
 impl CompressedChannelBuilder {
     /// Create a new builder with defaults
+    ///
+    /// # Returns
+    ///
+    /// A new `CompressedChannelBuilder` instance.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::channels::specialist::CompressedChannelBuilder;
+    ///
+    /// let builder = CompressedChannelBuilder::new();
+    /// ```
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -157,6 +427,22 @@ impl CompressedChannelBuilder {
     }
 
     /// Set the channel capacity
+    ///
+    /// # Parameters
+    ///
+    /// * `capacity` - The buffer capacity for the channel.
+    ///
+    /// # Returns
+    ///
+    /// The builder instance for chaining.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::channels::specialist::CompressedChannelBuilder;
+    ///
+    /// let builder = CompressedChannelBuilder::new().capacity(200);
+    /// ```
     #[must_use]
     pub fn capacity(mut self, capacity: usize) -> Self {
         self.capacity = capacity;
@@ -164,6 +450,22 @@ impl CompressedChannelBuilder {
     }
 
     /// Set the compression level
+    ///
+    /// # Parameters
+    ///
+    /// * `level` - Brotli compression level (0-11, higher = better compression but slower).
+    ///
+    /// # Returns
+    ///
+    /// The builder instance for chaining.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::channels::specialist::CompressedChannelBuilder;
+    ///
+    /// let builder = CompressedChannelBuilder::new().compression_level(9);
+    /// ```
     #[must_use]
     pub fn compression_level(mut self, level: u32) -> Self {
         self.compression_level = level;
@@ -171,6 +473,21 @@ impl CompressedChannelBuilder {
     }
 
     /// Build the `CompressedChannel`
+    ///
+    /// # Returns
+    ///
+    /// A new `CompressedChannel` with the configured settings.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::channels::specialist::CompressedChannelBuilder;
+    ///
+    /// let channel = CompressedChannelBuilder::new()
+    ///     .capacity(50)
+    ///     .compression_level(11)
+    ///     .build();
+    /// ```
     #[must_use]
     pub fn build(self) -> CompressedChannel {
         CompressedChannel::with_config(self.capacity, self.compression_level)
@@ -184,6 +501,31 @@ impl Default for CompressedChannelBuilder {
 }
 
 /// File-backed channel for persistence and large data handling
+///
+/// Automatically falls back to temporary file storage when the in-memory channel is full.
+/// Useful for handling large volumes of data or preventing memory exhaustion.
+///
+/// # Type Parameters
+///
+/// * `T` - The type of data to send (must implement Serialize/Deserialize).
+///
+/// # Examples
+///
+/// ```rust
+/// use trash_utilities::channels::specialist::FileBackedChannel;
+/// use smol;
+/// use serde::Serialize;
+///
+/// #[derive(Serialize)]
+/// struct LargeData { content: Vec<u8> }
+///
+/// # smol::block_on(async {
+/// let channel = FileBackedChannel::new().unwrap();
+/// let data = LargeData { content: vec![0; 1000000] }; // 1MB
+/// channel.send(data).await.unwrap();
+/// // Data is stored in memory or file as needed
+/// # });
+/// ```
 pub struct FileBackedChannel<T> {
     tx: crate::channels::core::TxFuture<T>,
     temp_file: Arc<Mutex<Option<NamedTempFile>>>,
@@ -192,9 +534,27 @@ pub struct FileBackedChannel<T> {
 impl<T: Serialize + for<'de> Deserialize<'de> + Send + 'static + Unpin> FileBackedChannel<T> {
     /// Create a new file-backed channel
     ///
+    /// Creates a temporary file for overflow storage.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - The type of data to send.
+    ///
+    /// # Returns
+    ///
+    /// A new `FileBackedChannel` instance on success.
+    ///
     /// # Errors
     ///
     /// Returns an error if creating the temporary file fails.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::channels::specialist::FileBackedChannel;
+    ///
+    /// let channel: FileBackedChannel<String> = FileBackedChannel::new().unwrap();
+    /// ```
     pub fn new() -> Result<Self, std::io::Error> {
         // expose the receiver so the background writer can persist overflowed messages
         let (tx, file_rx) = crate::channels::core::bounded_queue_3::<T>(100);
@@ -221,9 +581,27 @@ impl<T: Serialize + for<'de> Deserialize<'de> + Send + 'static + Unpin> FileBack
 
     /// Send data (async, non-blocking, memory first then file)
     ///
+    /// Attempts to send to the in-memory channel first. If full, serializes and writes to file.
+    ///
+    /// # Parameters
+    ///
+    /// * `data` - The data to send.
+    ///
     /// # Errors
     ///
     /// Returns an error if serialization fails.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::channels::specialist::FileBackedChannel;
+    /// use smol;
+    ///
+    /// # smol::block_on(async {
+    /// let channel: FileBackedChannel<String> = FileBackedChannel::new().unwrap();
+    /// channel.send("data".to_string()).await.unwrap();
+    /// # });
+    /// ```
     pub async fn send(&self, data: T) -> Result<(), Box<dyn std::error::Error>> {
         // Serialize first so we can persist if send fails.
         let json = serde_json::to_string(&data)?;
@@ -242,9 +620,24 @@ impl<T: Serialize + for<'de> Deserialize<'de> + Send + 'static + Unpin> FileBack
 
     /// Flush file data to memory
     ///
+    /// Reads all data from the temporary file and returns it as a vector.
+    ///
+    /// # Returns
+    ///
+    /// A vector of deserialized data from the file.
+    ///
     /// # Errors
     ///
     /// Returns an error if file reading or deserialization fails.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::channels::specialist::FileBackedChannel;
+    ///
+    /// let channel: FileBackedChannel<String> = FileBackedChannel::new().unwrap();
+    /// let data: Vec<String> = channel.flush_to_memory().unwrap();
+    /// ```
     pub fn flush_to_memory(&self) -> Result<Vec<T>, Box<dyn std::error::Error>> {
         let mut results = Vec::new();
         if let Some(ref file) = *self.temp_file.lock() {
@@ -273,6 +666,25 @@ impl<T: Serialize + for<'de> Deserialize<'de> + Send + 'static> Default for File
 }
 
 /// Rate-limited channel to prevent overwhelming receivers (non-blocking)
+///
+/// Uses a token bucket algorithm to limit the rate of messages sent.
+/// Useful for controlling throughput and preventing system overload.
+///
+/// # Type Parameters
+///
+/// * `T` - The type of data to send.
+///
+/// # Examples
+///
+/// ```rust
+/// use trash_utilities::channels::specialist::RateLimitedChannel;
+/// use smol;
+///
+/// # smol::block_on(async {
+/// let channel = RateLimitedChannel::new(10, 10.0, 1.0); // 10 tokens, refill 1/sec
+/// channel.send("message".to_string()).await.unwrap();
+/// # });
+/// ```
 pub struct RateLimitedChannel<T> {
     tx: crate::channels::core::TxFuture<T>,
     rate_limiter: Arc<Mutex<RateLimiter>>,
@@ -340,6 +752,28 @@ impl<T: Send + 'static> RateLimitedChannel<T> {
 }
 
 /// Prioritized channel with multiple priority levels (non-blocking)
+///
+/// Supports high, normal, and low priority messages. High priority messages are processed first.
+/// Useful for systems requiring message prioritization.
+///
+/// # Type Parameters
+///
+/// * `T` - The type of data to send/receive.
+///
+/// # Examples
+///
+/// ```rust
+/// use trash_utilities::channels::specialist::PriorityChannel;
+/// use smol;
+///
+/// # smol::block_on(async {
+/// let channel = PriorityChannel::new(10);
+/// channel.send_high("urgent".to_string()).await.unwrap();
+/// channel.send_normal("normal".to_string()).await.unwrap();
+/// let msg = channel.recv().await.unwrap(); // Gets "urgent" first
+/// assert_eq!(msg, "urgent");
+/// # });
+/// ```
 pub struct PriorityChannel<T> {
     high_tx: crate::channels::core::TxFuture<T>,
     normal_tx: crate::channels::core::TxFuture<T>,
