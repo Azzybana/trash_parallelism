@@ -659,6 +659,166 @@ pub fn test_memory_profiler_rate_calculation() {
 }
 
 #[test]
+pub fn test_compressed_memory_pool_empty_data() {
+    let config = default_pool_config("compressed_empty");
+    let pool = CompressedMemoryPool::new(config, 6);
+
+    let data = b"";
+    let allocation = pool.allocate_compressed(data).unwrap();
+    assert_eq!(allocation.original_size(), 0);
+    assert!(allocation.compressed_size() > 0); // Brotli may add header
+
+    let decompressed = allocation.decompress().unwrap();
+    assert_eq!(decompressed, data);
+}
+
+#[test]
+pub fn test_compressed_memory_pool_large_data() {
+    let config = default_pool_config("compressed_large");
+    let pool = CompressedMemoryPool::new(config, 6);
+
+    let data = vec![b'A'; 10000]; // Large compressible data
+    let allocation = pool.allocate_compressed(&data).unwrap();
+    assert_eq!(allocation.original_size(), 10000);
+    assert!(allocation.compressed_size() < 10000); // Should compress
+
+    let decompressed = allocation.decompress().unwrap();
+    assert_eq!(decompressed, data);
+}
+
+#[test]
+pub fn test_compressed_allocation_stats_update() {
+    let config = default_pool_config("compressed_stats");
+    let pool = CompressedMemoryPool::new(config, 6);
+
+    let initial_stats = pool.stats();
+    assert_eq!(initial_stats.allocated_bytes, 0);
+
+    let data = b"Hello, world!";
+    let allocation = pool.allocate_compressed(data).unwrap();
+
+    let after_alloc_stats = pool.stats();
+    assert!(after_alloc_stats.allocated_bytes > 0);
+
+    drop(allocation);
+
+    let after_drop_stats = pool.stats();
+    assert_eq!(after_drop_stats.allocated_bytes, 0);
+}
+
+#[test]
+pub fn test_secure_memory_pool_no_key() {
+    let config = default_pool_config("secure_no_key");
+    let pool = SecureMemoryPool::new(config, None);
+    assert!(!pool.is_encrypted());
+
+    let data = b"Plain data";
+    let allocation = pool.allocate_encrypted(data).unwrap();
+    assert!(!allocation.is_encrypted());
+
+    let decrypted = allocation.decrypt(&[]).unwrap(); // Empty key
+    assert_eq!(decrypted, data);
+}
+
+#[test]
+pub fn test_secure_allocation_decrypt_wrong_key() {
+    let config = default_pool_config("secure_wrong_key");
+    let key = b"correct_key_32_bytes_long!!!!";
+    let pool = SecureMemoryPool::new(config, Some(key.to_vec()));
+
+    let data = b"Secret data";
+    let allocation = pool.allocate_encrypted(data).unwrap();
+
+    let wrong_key = b"wrong_key_32_bytes_long!!!!!!";
+    let decrypted = allocation.decrypt(wrong_key).unwrap();
+    assert_ne!(decrypted, data); // Should not match
+}
+
+#[test]
+pub fn test_secure_allocation_wipe_manual() {
+    let config = default_pool_config("secure_wipe_manual");
+    let key = b"test_key_32_bytes_long!!!!!!!";
+    let pool = SecureMemoryPool::new(config, Some(key.to_vec()));
+
+    let data = b"Data to wipe";
+    let mut allocation = pool.allocate_encrypted(data).unwrap();
+
+    // Manually wipe
+    allocation.secure_wipe();
+
+    // After wipe, decrypt should give garbage
+    let decrypted = allocation.decrypt(key).unwrap();
+    assert_ne!(decrypted, data);
+}
+
+#[test]
+pub fn test_memory_mapped_pool_write_beyond_capacity() {
+    let pool = MemoryMappedPool::new(100).unwrap();
+    assert_eq!(pool.capacity(), 100);
+
+    let data = vec![b'X'; 50];
+    pool.write_data(0, &data).unwrap();
+
+    // Try to write beyond capacity
+    let data = [b'Y'; 50];
+    let result = pool.write_data(60, &data);
+    assert!(result.is_err());
+}
+
+#[test]
+pub fn test_memory_mapped_pool_read_beyond_capacity() {
+    let pool = MemoryMappedPool::new(100).unwrap();
+
+    let result = pool.read_data(90, 20);
+    assert!(result.is_err());
+}
+
+#[test]
+pub fn test_memory_mapped_pool_stats_update() {
+    let pool = MemoryMappedPool::new(1000).unwrap();
+
+    let initial_stats = pool.stats();
+    assert_eq!(initial_stats.allocated_bytes, 0);
+
+    let data = b"Hello";
+    pool.write_data(0, data).unwrap();
+
+    let after_write_stats = pool.stats();
+    assert_eq!(after_write_stats.allocated_bytes, data.len());
+}
+
+#[test]
+pub fn test_parallel_memory_processor_empty_blocks() {
+    let processor = ParallelMemoryProcessor::new(2);
+
+    let blocks: Vec<Vec<u8>> = vec![];
+    let results: Vec<usize> = processor.process_blocks(blocks, |block| block.len());
+    assert!(results.is_empty());
+}
+
+#[test]
+pub fn test_parallel_memory_processor_compress_empty() {
+    let processor = ParallelMemoryProcessor::new(2);
+
+    let blocks = vec![vec![], vec![b'A'; 10]];
+    let compressed = processor.compress_blocks(blocks, 6);
+    assert_eq!(compressed.len(), 2);
+
+    let empty_compressed = compressed[0].as_ref().unwrap();
+    assert!(!empty_compressed.is_empty()); // Brotli header
+
+    let data_compressed = compressed[1].as_ref().unwrap();
+    assert!(!data_compressed.is_empty());
+}
+
+#[test]
+pub fn test_global_enhanced_memory_manager() {
+    let manager = global_enhanced_memory_manager();
+    // Just check it creates successfully
+    assert_eq!(manager.parallel_processor().active_threads(), 0);
+}
+
+#[test]
 pub fn test_memory() {
     test_calc_ratio();
     test_get_mimalloc_stats();
@@ -687,4 +847,31 @@ pub fn test_memory() {
     test_memory_snapshot_import_export();
     test_parallel_memory_processor_compress();
     test_enhanced_memory_manager_parallel_processor();
+    test_memory_stats_default();
+    test_allocation_stats();
+    test_memory_event_and_type();
+    test_global_memory_manager();
+    test_init_memory_management();
+    test_enhanced_memory_manager_default();
+    test_memory_manager_clone();
+    test_memory_snapshot_import_invalid();
+    test_memory_event_logger_max_events();
+    test_memory_report_output();
+    test_memory_profiler_multiple_tags();
+    test_memory_event_logger_different_types();
+    test_memory_snapshot_with_pools();
+    test_memory_snapshot_methods();
+    test_memory_profiler_rate_calculation();
+    test_compressed_memory_pool_empty_data();
+    test_compressed_memory_pool_large_data();
+    test_compressed_allocation_stats_update();
+    test_secure_memory_pool_no_key();
+    test_secure_allocation_decrypt_wrong_key();
+    test_secure_allocation_wipe_manual();
+    test_memory_mapped_pool_write_beyond_capacity();
+    test_memory_mapped_pool_read_beyond_capacity();
+    test_memory_mapped_pool_stats_update();
+    test_parallel_memory_processor_empty_blocks();
+    test_parallel_memory_processor_compress_empty();
+    test_global_enhanced_memory_manager();
 }
