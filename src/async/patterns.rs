@@ -1,7 +1,25 @@
 /// Advanced async patterns for reliability, concurrency, and resource management.
 ///
-/// This module provides timeout wrappers, retry mechanisms, circuit breakers, parallel processing,
-/// resource pools, streaming processors, and performance monitoring for robust async operations.
+/// This module provides robust async utilities including timeout wrappers, retry mechanisms,
+/// circuit breakers for fault tolerance, parallel processing, resource pools, streaming processors,
+/// and performance monitoring to build resilient async applications.
+///
+/// # Examples
+///
+/// Basic timeout usage:
+/// ```rust
+/// use trash_utilities::async::patterns::{with_timeout, TimeoutError};
+/// use smol;
+/// use std::time::Duration;
+///
+/// # smol::block_on(async {
+/// let result = with_timeout(Duration::from_secs(1), async {
+///     smol::Timer::after(Duration::from_millis(500)).await;
+///     42
+/// }).await;
+/// assert_eq!(result, Ok(42));
+/// # });
+/// ```
 // Standard library imports
 use std::{marker::PhantomData, sync::Arc, time::Duration};
 
@@ -10,11 +28,52 @@ use futures_lite;
 use parking_lot::Mutex;
 use smol::Timer;
 
-/// Async timeout wrapper (non-blocking)
+/// Async timeout wrapper (non-blocking).
+///
+/// Wraps an async operation with a timeout, ensuring it completes within the specified duration.
+/// If the operation takes longer than the timeout, it returns a `TimeoutError`.
+///
+/// # Parameters
+///
+/// * `duration` - The maximum time to wait for the operation to complete.
+/// * `future` - The async operation to execute.
+///
+/// # Type Parameters
+///
+/// * `T` - The type of the result returned by the future.
+/// * `F` - The type of the future.
+///
+/// # Returns
+///
+/// Returns `Ok(result)` if the operation completes within the timeout, or `Err(TimeoutError::Timeout)` if it times out.
 ///
 /// # Errors
 ///
-/// Returns `TimeoutError::Timeout` if the operation times out.
+/// Returns `TimeoutError::Timeout` if the operation exceeds the specified duration.
+///
+/// # Examples
+///
+/// ```rust
+/// use trash_utilities::async::patterns::{with_timeout, TimeoutError};
+/// use smol;
+/// use std::time::Duration;
+///
+/// # smol::block_on(async {
+/// // This will succeed
+/// let result = with_timeout(Duration::from_secs(1), async {
+///     smol::Timer::after(Duration::from_millis(100)).await;
+///     "success"
+/// }).await;
+/// assert_eq!(result, Ok("success"));
+///
+/// // This will timeout
+/// let result = with_timeout(Duration::from_millis(50), async {
+///     smol::Timer::after(Duration::from_millis(100)).await;
+///     "too slow"
+/// }).await;
+/// assert_eq!(result, Err(TimeoutError::Timeout));
+/// # });
+/// ```
 pub async fn with_timeout<T, F>(duration: Duration, future: F) -> Result<T, TimeoutError>
 where
     F: std::future::Future<Output = T>,
@@ -33,17 +92,53 @@ where
     }
 }
 
-/// Timeout error
+/// Timeout error.
+///
+/// Represents the possible errors that can occur when using timeout wrappers.
 #[derive(Debug, Clone)]
 pub enum TimeoutError {
+    /// The operation timed out before completing.
     Timeout,
 }
 
-/// Async retry mechanism (non-blocking)
+/// Async retry mechanism (non-blocking).
+///
+/// Retries an async operation up to 3 times with a 100ms delay between attempts.
+/// This is a convenience function that uses default retry configuration.
+///
+/// # Parameters
+///
+/// * `operation` - A closure that returns the async operation to retry.
+///
+/// # Type Parameters
+///
+/// * `F` - The type of the operation closure.
+/// * `Fut` - The type of the future returned by the operation.
+/// * `T` - The type of the successful result.
+/// * `E` - The type of the error.
+///
+/// # Returns
+///
+/// Returns `Ok(result)` if the operation eventually succeeds, or `Err(error)` if all attempts fail.
 ///
 /// # Errors
 ///
-/// Returns the last error from the operation if all attempts fail.
+/// Returns the last error encountered if all retry attempts fail.
+///
+/// # Examples
+///
+/// ```rust
+/// use trash_utilities::async::patterns::retry_async;
+/// use smol;
+///
+/// # smol::block_on(async {
+/// let result = retry_async(|| async {
+///     // Simulate an operation that might fail
+///     Ok::<_, std::io::Error>("success")
+/// }).await;
+/// assert_eq!(result, Ok("success"));
+/// # });
+/// ```
 pub async fn retry_async<F, Fut, T, E>(operation: F) -> Result<T, E>
 where
     F: Fn() -> Fut,
@@ -55,9 +150,44 @@ where
 
 /// Retries an async operation with custom configuration.
 ///
+/// Allows specifying the number of retry attempts and the delay between them.
+///
+/// # Parameters
+///
+/// * `attempts` - The maximum number of attempts (including the initial one).
+/// * `delay` - The duration to wait between retry attempts.
+/// * `operation` - A closure that returns the async operation to retry.
+///
+/// # Type Parameters
+///
+/// * `F` - The type of the operation closure.
+/// * `Fut` - The type of the future returned by the operation.
+/// * `T` - The type of the successful result.
+/// * `E` - The type of the error.
+///
+/// # Returns
+///
+/// Returns `Ok(result)` if the operation eventually succeeds, or `Err(error)` if all attempts fail.
+///
 /// # Errors
 ///
-/// Returns the last error from the operation if all attempts fail.
+/// Returns the last error encountered if all retry attempts fail.
+///
+/// # Examples
+///
+/// ```rust
+/// use trash_utilities::async::patterns::retry_async_with_config;
+/// use smol;
+/// use std::time::Duration;
+///
+/// # smol::block_on(async {
+/// let result = retry_async_with_config(5, Duration::from_millis(50), || async {
+///     // Custom retry logic
+///     Ok::<_, std::io::Error>("success")
+/// }).await;
+/// assert_eq!(result, Ok("success"));
+/// # });
+/// ```
 pub async fn retry_async_with_config<F, Fut, T, E>(
     mut attempts: usize,
     delay: Duration,
@@ -82,7 +212,25 @@ where
     }
 }
 
-/// Async circuit breaker (non-blocking)
+/// Async circuit breaker (non-blocking).
+///
+/// A circuit breaker prevents cascading failures by temporarily stopping calls to a failing service.
+/// When failures exceed a threshold, the circuit "opens" and rejects further calls for a timeout period.
+/// After the timeout, it allows limited calls to test if the service has recovered.
+///
+/// # Examples
+///
+/// ```rust
+/// use trash_utilities::async::patterns::{AsyncCircuitBreaker, CircuitBreakerError};
+/// use smol;
+/// use std::time::Duration;
+///
+/// # smol::block_on(async {
+/// let breaker = AsyncCircuitBreaker::new();
+/// let result = breaker.execute(|| async { Ok::<_, std::io::Error>("success") }).await;
+/// assert_eq!(result, Ok("success"));
+/// # });
+/// ```
 pub struct AsyncCircuitBreaker {
     failures: Mutex<u32>,
     threshold: u32,
@@ -91,13 +239,45 @@ pub struct AsyncCircuitBreaker {
 }
 
 impl AsyncCircuitBreaker {
-    /// Create a new circuit breaker with defaults
+    /// Create a new circuit breaker with defaults.
+    ///
+    /// Uses a failure threshold of 5 and a timeout of 60 seconds.
+    ///
+    /// # Returns
+    ///
+    /// A new `AsyncCircuitBreaker` instance.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::async::patterns::AsyncCircuitBreaker;
+    ///
+    /// let breaker = AsyncCircuitBreaker::new();
+    /// ```
     #[must_use]
     pub fn new() -> Self {
         Self::with_config(5, Duration::from_secs(60))
     }
 
-    /// Create a new circuit breaker with custom config
+    /// Create a new circuit breaker with custom config.
+    ///
+    /// # Parameters
+    ///
+    /// * `threshold` - Number of consecutive failures before opening the circuit.
+    /// * `timeout` - Duration to wait before attempting to close the circuit again.
+    ///
+    /// # Returns
+    ///
+    /// A new `AsyncCircuitBreaker` instance with the specified configuration.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::async::patterns::AsyncCircuitBreaker;
+    /// use std::time::Duration;
+    ///
+    /// let breaker = AsyncCircuitBreaker::with_config(3, Duration::from_secs(30));
+    /// ```
     #[must_use]
     pub fn with_config(threshold: u32, timeout: Duration) -> Self {
         Self {
@@ -108,17 +288,67 @@ impl AsyncCircuitBreaker {
         }
     }
 
-    /// Create a builder for advanced configuration
+    /// Create a builder for advanced configuration.
+    ///
+    /// Use the builder for fluent configuration of the circuit breaker.
+    ///
+    /// # Returns
+    ///
+    /// An `AsyncCircuitBreakerBuilder` instance.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::async::patterns::AsyncCircuitBreaker;
+    /// use std::time::Duration;
+    ///
+    /// let breaker = AsyncCircuitBreaker::builder()
+    ///     .threshold(10)
+    ///     .timeout(Duration::from_secs(120))
+    ///     .build();
+    /// ```
     #[must_use]
     pub fn builder() -> AsyncCircuitBreakerBuilder {
         AsyncCircuitBreakerBuilder::new()
     }
 
-    /// Execute an operation with circuit breaker protection (non-blocking)
+    /// Execute an operation with circuit breaker protection (non-blocking).
+    ///
+    /// If the circuit is open, the operation is not executed and `CircuitOpen` is returned.
+    /// If the operation succeeds, the failure count is reset. If it fails, the failure count increases,
+    /// and if it exceeds the threshold, the circuit opens.
+    ///
+    /// # Parameters
+    ///
+    /// * `operation` - A closure that returns the async operation to protect.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `F` - The type of the operation closure.
+    /// * `Fut` - The type of the future.
+    /// * `T` - The type of the successful result.
+    /// * `E` - The type of the error.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(result)` if the operation succeeds, or an error if the circuit is open or the operation fails.
     ///
     /// # Errors
     ///
     /// Returns `CircuitBreakerError::CircuitOpen` if the circuit is open, or `CircuitBreakerError::OperationError` if the operation fails.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use trash_utilities::async::patterns::{AsyncCircuitBreaker, CircuitBreakerError};
+    /// use smol;
+    ///
+    /// # smol::block_on(async {
+    /// let breaker = AsyncCircuitBreaker::new();
+    /// let result = breaker.execute(|| async { Ok::<_, std::io::Error>("success") }).await;
+    /// assert_eq!(result, Ok("success"));
+    /// # });
+    /// ```
     pub async fn execute<F, Fut, T, E>(&self, operation: F) -> Result<T, CircuitBreakerError<E>>
     where
         F: FnOnce() -> Fut,
@@ -203,14 +433,49 @@ impl Default for AsyncCircuitBreakerBuilder {
     }
 }
 
-/// Circuit breaker error
+/// Circuit breaker error.
+///
+/// Represents the possible errors that can occur when using the circuit breaker.
 #[derive(Debug)]
 pub enum CircuitBreakerError<E> {
+    /// The circuit is open and operations are not allowed.
     CircuitOpen,
+    /// The operation failed with the wrapped error.
     OperationError(E),
 }
 
-/// Async parallel processing (non-blocking, high-throughput)
+/// Async parallel processing (non-blocking, high-throughput).
+///
+/// Processes a collection of items in parallel using async tasks.
+/// Each item is processed by the provided function, and results are collected in order.
+///
+/// # Parameters
+///
+/// * `data` - The vector of items to process.
+/// * `processor` - A function that takes an item and returns a processed result.
+///
+/// # Type Parameters
+///
+/// * `T` - The type of input items.
+/// * `U` - The type of output results.
+/// * `F` - The type of the processor function.
+///
+/// # Returns
+///
+/// A vector of processed results in the same order as the input.
+///
+/// # Examples
+///
+/// ```rust
+/// use trash_utilities::async::patterns::parallel_process_async;
+/// use smol;
+///
+/// # smol::block_on(async {
+/// let data = vec![1, 2, 3, 4, 5];
+/// let results = parallel_process_async(data, |x| x * 2).await;
+/// assert_eq!(results, vec![2, 4, 6, 8, 10]);
+/// # });
+/// ```
 pub async fn parallel_process_async<T, U, F>(data: Vec<T>, processor: F) -> Vec<U>
 where
     T: Send + 'static,
@@ -234,7 +499,25 @@ where
     results
 }
 
-/// Async resource pool (non-blocking)
+/// Async resource pool (non-blocking).
+///
+/// Manages a pool of reusable resources, creating them on demand and recycling them.
+/// Resources are acquired via guards that automatically return them to the pool when dropped.
+///
+/// # Type Parameters
+///
+/// * `T` - The type of resources in the pool.
+///
+/// # Examples
+///
+/// ```rust
+/// use trash_utilities::async::patterns::AsyncResourcePool;
+///
+/// let pool = AsyncResourcePool::new(|| String::from("resource"));
+/// let guard = pool.acquire();
+/// assert_eq!(*guard, "resource");
+/// // Resource is automatically returned when guard is dropped
+/// ```
 pub struct AsyncResourcePool<T> {
     resources: Mutex<Vec<T>>,
     factory: Box<dyn Fn() -> T + Send + Sync>,
@@ -357,7 +640,31 @@ impl<T> Drop for ResourceGuard<'_, T> {
     }
 }
 
-/// Async streaming processor (non-blocking, high-throughput)
+/// Async streaming processor (non-blocking, high-throughput).
+///
+/// Buffers items and processes them in batches when the buffer is full or flushed.
+/// Useful for efficient batch processing of streaming data.
+///
+/// # Type Parameters
+///
+/// * `T` - The type of items to process.
+/// * `F` - The type of the batch processor function.
+///
+/// # Examples
+///
+/// ```rust
+/// use trash_utilities::async::patterns::AsyncStreamProcessor;
+/// use smol;
+///
+/// # smol::block_on(async {
+/// let processor = AsyncStreamProcessor::new(|batch: Vec<i32>| async move {
+///     println!("Processing batch of {} items", batch.len());
+/// });
+/// processor.push(1).await;
+/// processor.push(2).await;
+/// processor.flush().await; // Process remaining items
+/// # });
+/// ```
 pub struct AsyncStreamProcessor<T, F> {
     processor: F,
     buffer: Mutex<Vec<T>>,
@@ -454,7 +761,29 @@ impl<T, F> AsyncStreamProcessorBuilder<T, F> {
     }
 }
 
-/// Async performance monitor (non-blocking)
+/// Async performance monitor (non-blocking).
+///
+/// Tracks the execution time of async operations for performance analysis.
+/// Provides statistics and averages for monitoring and optimization.
+///
+/// # Examples
+///
+/// ```rust
+/// use trash_utilities::async::patterns::AsyncPerformanceMonitor;
+/// use smol;
+/// use std::time::Duration;
+///
+/// # smol::block_on(async {
+/// let monitor = AsyncPerformanceMonitor::new();
+/// let result = monitor.time_operation("test_op", || async {
+///     smol::Timer::after(Duration::from_millis(10)).await;
+///     42
+/// }).await;
+/// assert_eq!(result, 42);
+/// let stats = monitor.stats();
+/// assert_eq!(stats.len(), 1);
+/// # });
+/// ```
 #[derive(Debug)]
 pub struct AsyncPerformanceMonitor {
     operations: Mutex<Vec<(String, Duration)>>,
