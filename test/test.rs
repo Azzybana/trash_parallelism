@@ -21,6 +21,7 @@ mod serde_test;
 mod sys_test;
 
 #[cfg(test)]
+#[test]
 fn run_all_tests() {
     async_test::test_async();
     common_test::test_common();
