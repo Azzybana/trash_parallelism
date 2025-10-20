@@ -1,2 +1,5 @@
 [build]
     rustdocflags = ["--default-theme", "trash", "--theme", "doc/trash.css"]
+
+[profile.test]
+    timeout = "10s"
