@@ -373,10 +373,15 @@ pub fn test_batching_channel() {
 pub fn test_batching_channel_send() {
     smol::block_on(async {
         let channel: parsers::BatchingChannel<String> = parsers::BatchingChannel::new(2, 10);
-        // Test that sending works without errors
+        let batch_receiver = channel.batch_receiver();
+
         channel.send("item1".to_string()).await.unwrap();
         channel.send("item2".to_string()).await.unwrap(); // Should trigger batch
-        channel.flush_batch().await.unwrap(); // Ensure batch is sent
+
+        let batch = core::recv_async(&batch_receiver).await.unwrap();
+        assert_eq!(batch.len(), 2);
+        assert_eq!(batch[0], "item1");
+        assert_eq!(batch[1], "item2");
     });
 }
 

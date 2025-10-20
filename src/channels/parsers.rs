@@ -282,6 +282,7 @@ impl<T: Send + 'static + Clone> ChannelAggregator<T> {
 /// ```
 pub struct BatchingChannel<T> {
     tx: crate::channels::core::TxFuture<Vec<T>>,
+    rx: crate::channels::core::RxFuture<Vec<T>>,
     batch_size: usize,
     current_batch: Arc<Mutex<Vec<T>>>,
 }
@@ -307,9 +308,10 @@ impl<T: Clone + Send + 'static> BatchingChannel<T> {
     /// ```
     #[must_use]
     pub fn new(batch_size: usize, capacity: usize) -> Self {
-        let (tx, _) = crate::channels::core::bounded_queue_3(capacity);
+        let (tx, rx) = crate::channels::core::bounded_queue_3(capacity);
         Self {
             tx,
+            rx,
             batch_size,
             current_batch: Arc::new(Mutex::new(Vec::with_capacity(batch_size))),
         }
@@ -387,26 +389,32 @@ impl<T: Clone + Send + 'static> BatchingChannel<T> {
         Ok(())
     }
 
-    /// Get the batch sender
+    /// Get the batch receiver
     ///
-    /// Returns the channel sender that receives completed batches.
+    /// Returns the channel receiver that receives completed batches.
     ///
     /// # Returns
     ///
-    /// The batch output channel sender.
+    /// The batch output channel receiver.
     ///
     /// # Examples
     ///
     /// ```rust
     /// use trash_utilities::channels::parsers::BatchingChannel;
+    /// use smol;
     ///
-    /// let channel = BatchingChannel::new(5, 10);
-    /// let batch_sender = channel.batch_sender();
-    /// // Use batch_sender to receive Vec<T> batches
+    /// # smol::block_on(async {
+    /// let channel = BatchingChannel::new(2, 10);
+    /// let batch_receiver = channel.batch_receiver();
+    /// channel.send("item1").await.unwrap();
+    /// channel.send("item2").await.unwrap();
+    /// let batch = batch_receiver.recv().await.unwrap();
+    /// assert_eq!(batch.len(), 2);
+    /// # });
     /// ```
     #[must_use]
-    pub fn batch_sender(&self) -> crate::channels::core::TxFuture<Vec<T>> {
-        self.tx.clone()
+    pub fn batch_receiver(&self) -> crate::channels::core::RxFuture<Vec<T>> {
+        self.rx.clone()
     }
 }
 
