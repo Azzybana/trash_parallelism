@@ -74,7 +74,6 @@
 /// ```
 // Standard library imports
 use std::{
-    alloc::{Layout, dealloc},
     sync::{
         Arc,
         atomic::{AtomicBool, AtomicUsize, Ordering},
@@ -152,24 +151,23 @@ impl MemoryPool {
     ///
     /// # Errors
     ///
-    /// Returns an `std::io::Error` if the layout is invalid.
+    /// Returns an `std::io::Error` if the allocation is not found.
     #[allow(clippy::not_unsafe_ptr_arg_deref)]
     pub fn deallocate(&self, ptr: *mut u8, size: usize) -> Result<(), std::io::Error> {
         if ptr.is_null() {
             return Ok(());
         }
 
-        let layout = Layout::from_size_align(size, self.config.alignment)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidInput, e))?;
-
-        unsafe { dealloc(ptr, layout) };
-
-        // Remove from tracking
+        // Remove from tracking and let the Box drop to free memory
         let mut blocks = self.allocated_blocks.lock();
-        if let Some(block_list) = blocks.get_mut(&size)
-            && let Some(pos) = block_list.iter().position(|b| b.as_ptr().cast_mut() == ptr)
-        {
-            block_list.remove(pos);
+        if let Some(block_list) = blocks.get_mut(&size) {
+            if let Some(pos) = block_list.iter().position(|b| b.as_ptr().cast_mut() == ptr) {
+                block_list.remove(pos);
+            } else {
+                return Err(std::io::Error::other("Allocation not found in pool"));
+            }
+        } else {
+            return Err(std::io::Error::other("Allocation size not found in pool"));
         }
 
         // Update stats
