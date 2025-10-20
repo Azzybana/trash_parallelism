@@ -1,5 +1,4 @@
 //! Tests for the sys module
-#![cfg(test)]
 use chrono::Datelike;
 use trash_utilities::sys::*;
 
@@ -147,7 +146,7 @@ pub fn test_list_directory() {
 }
 
 #[test]
-pub fn test_sys_basic() {
+pub fn test_sys() {
     test_timer_creation();
     test_current_utc_time();
     test_format_datetime();
