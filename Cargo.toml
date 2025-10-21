@@ -24,7 +24,7 @@
     path = "src/lib.rs"
     crate-type = ["rlib"]
 
-[[bin]]
+[[test]]
     name = "test_trash_parallelism"
     path = "test/test.rs"
 
